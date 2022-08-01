@@ -23,14 +23,24 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
   return offset + 2;
 }
 
+int getLine(Chunk* chunk, int offset) {
+  int offsetWithOneAdded = offset + 1;
+  //  add up values in chunk.lines until sum is greater than the current offset
+  int sum = 0;
+  int index = 0;
+  for (; index < chunk->count; index++) {
+    sum += chunk->lines[index];
+    if (sum >= offsetWithOneAdded) {
+      break;
+    }
+  }
+  return index;
+}
+
 int disassembleInstruction(Chunk* chunk, int offset) {
   printf("%04d ", offset);
-  
-  if (offset > 0 && chunk->lines[offset] == chunk->lines[offset-1]) {
-    printf("  |  ");
-  } else {
-    printf("%4d ", chunk->lines[offset]);
-  }
+  int line = getLine(chunk, offset);
+  printf("%4d ", line);
 
   uint8_t instruction = chunk->code[offset];
   switch (instruction) {
