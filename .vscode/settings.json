@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "chunk.h": "c",
+        "memory.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Enabled",
+    "editor.inlineSuggest.enabled": false
+}
