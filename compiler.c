@@ -224,7 +224,7 @@ static void parsePrecendence(Precedence precedence) {
   Precedence p = getRule(parser.current.type).precedence;
   while (precedence <= getRule(parser.current.type).precedence) {
     advance();
-    ParseFn infixRule = getRule(parser.current.type).infix;
+    ParseFn infixRule = getRule(parser.previous.type).infix;
     infixRule();
   }
 }
@@ -241,7 +241,6 @@ bool compile(const char* source, Chunk* chunk) {
   parser.panicMode = false;
 
   advance();
-  //  the call to expression below is causing a SIGSEGV
   expression();
   consume(TOKEN_EOF, "Expect end of expression.");
   endCompiler();
