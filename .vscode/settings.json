@@ -25,7 +25,12 @@
         "istream": "c",
         "ostream": "c",
         "sstream": "c",
-        "functional": "c"
+        "functional": "c",
+        "algorithm": "c",
+        "iterator": "c",
+        "vector": "c",
+        "streambuf": "c",
+        "stdio.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false

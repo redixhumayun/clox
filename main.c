@@ -7,22 +7,6 @@
 #include "debug.h"
 #include "vm.h"
 
-int main(int argc, const char* argv[]) {
-  initVM();
-
-  if (argc == 1) {
-    repl();
-  } else if (argc == 2) {
-    runFile(argv[1]);
-  } else {
-    fprintf(stderr, "Usage: clox [PATH]");
-    exit(64);
-  }
-
-  freeVM();
-  return 0;
-}
-
 void repl() {
   char line[1024];
   for(;;) {
@@ -34,15 +18,6 @@ void repl() {
 
     interpret(line);
   }
-}
-
-void runFile(const char* path) {
-  char* source = readFile(path);
-  InterpretResult result = interpret(source);
-  free(source);
-
-  if (result == INTERPRET_COMPILE_ERROR) exit(65);
-  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
 static char* readFile(const char* path) {
@@ -70,4 +45,29 @@ static char* readFile(const char* path) {
 
   fclose(file);
   return buffer;
+}
+
+void runFile(const char* path) {
+  char* source = readFile(path);
+  InterpretResult result = interpret(source);
+  free(source);
+
+  if (result == INTERPRET_COMPILE_ERROR) exit(65);
+  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
+}
+
+int main(int argc, const char* argv[]) {
+  initVM();
+
+  if (argc == 1) {
+    repl();
+  } else if (argc == 2) {
+    runFile(argv[1]);
+  } else {
+    fprintf(stderr, "Usage: clox [PATH]");
+    exit(64);
+  }
+
+  freeVM();
+  return 0;
 }

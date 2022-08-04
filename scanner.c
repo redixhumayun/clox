@@ -12,6 +12,16 @@ typedef struct {
 
 Scanner scanner;
 
+static void skipWhitespace();
+static Token makeToken(TokenType tokenType);
+static char advance();
+static bool isAtEnd();
+static Token identifier();
+static Token string();
+static Token number();
+static bool match(char expected);
+static Token errorToken(const char* message);
+
 void initScanner(const char* source) {
   scanner.start = source;
   scanner.current = source;
