@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "vm.h"
 #include "chunk.h"
@@ -7,6 +8,8 @@
 #include "common.h"
 #include "compiler.h"
 #include "value.h"
+#include "object.h"
+#include "memory.h"
 
 VM vm;
 
@@ -28,6 +31,22 @@ static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
+static void concatenate() {
+  Value b = pop();
+  Value a = pop();
+  ObjString* bString = AS_STRING(b);
+  ObjString* aString = AS_STRING(a);
+
+  int combinedLength = aString->length + bString->length;
+  char* combinedString = ALLOCATE(char, combinedLength+1);
+  memcpy(combinedString, aString->chars, aString->length);
+  memcpy(combinedString + aString->length, bString->chars, bString->length);
+  combinedString[combinedLength] = '\0';
+
+  ObjString* result = allocateString(combinedString, combinedLength);
+  push(OBJ_VAL(result));
+}
+
 static void resetStack() {
   vm.stackTop = vm.stack;
 }
@@ -47,10 +66,11 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() {
   resetStack();
+  vm.objects = NULL;
 }
 
 void freeVM() {
-
+  freeObjects();
 }
 
 static InterpretResult run() {
@@ -113,7 +133,19 @@ static InterpretResult run() {
       }
       case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
       case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
-      case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
+      case OP_ADD: {
+        if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+          concatenate();
+        } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+          double a = AS_NUMBER(pop());
+          double b = AS_NUMBER(pop());
+          push(NUMBER_VAL(a+b));
+        } else {
+          runtimeError("Operands must be two numbers or two strings");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
       case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
       case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;

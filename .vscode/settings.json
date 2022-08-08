@@ -31,7 +31,22 @@
         "vector": "c",
         "streambuf": "c",
         "stdio.h": "c",
-        "value.h": "c"
+        "value.h": "c",
+        "__bit_reference": "c",
+        "__functional_base": "c",
+        "__node_handle": "c",
+        "atomic": "c",
+        "cstddef": "c",
+        "deque": "c",
+        "__memory": "c",
+        "limits": "c",
+        "optional": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "array": "c",
+        "utility": "c",
+        "common.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
