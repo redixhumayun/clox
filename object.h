@@ -27,6 +27,7 @@ struct ObjString {
     Obj obj;
     int length;
     char* chars;
+    // char chars[];
 };
 
 ObjString* copyString(const char* chars, int length);

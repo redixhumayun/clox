@@ -5,7 +5,10 @@
 #include "memory.h"
 #include "vm.h"
 
-#define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType);
+#define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
+
+#define ALLOCATE_OBJ_WITH_FLEXIBLE_ARRAY_MEMBER(structType, arrayType, arrayLength, objectType) \
+    (structType*)allocateObject(sizeof(structType) + arrayLength * sizeof(arrayType), objectType)
 
 static Obj* allocateObject(size_t size, ObjType type) {
     Obj* object = (Obj*)reallocate(NULL, 0, size);
@@ -17,8 +20,10 @@ static Obj* allocateObject(size_t size, ObjType type) {
 
 ObjString* allocateString(char* chars, int length) {
     ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
+    // ObjString* string = ALLOCATE_OBJ_WITH_FLEXIBLE_ARRAY_MEMBER(ObjString, char, length, OBJ_STRING);
     string->length = length;
     string->chars = chars;
+    // strcpy(string->chars, chars);
     return string;
 }
 
@@ -26,10 +31,6 @@ ObjString* copyString(const char* chars, int length) {
     char* heapChars = ALLOCATE(char, length + 1);
     memcpy(heapChars, chars, length);
     heapChars[length] = '\0';
-    ObjString objString;
-    objString.obj.type = OBJ_STRING;
-    objString.length = length;
-    objString.chars = heapChars;
     return allocateString(heapChars, length);
 }
 
@@ -38,5 +39,7 @@ void printObject(Value value) {
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
             break;
+        default:
+            fprintf(stderr, "Object is of unknown type");
     }
 }

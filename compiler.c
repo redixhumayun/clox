@@ -164,7 +164,7 @@ static void string() {
   const char* string = parser.previous.start + 1;
   int length = parser.previous.length - 2;
   ObjString* objectString = copyString(string, length);
-  emitConstant(OBJ_VAL(string));
+  emitConstant(OBJ_VAL(objectString));
 }
 
 static void unary() {

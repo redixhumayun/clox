@@ -28,7 +28,7 @@ typedef struct {
 #define IS_NUMBER(value) ((value).type == VALUE_NUMBER)
 #define IS_OBJ(value) ((value).type == VALUE_OBJ)
 
-//  This set of functions takes some CLox values and unwraps them into native C values
+//  This set of functions takes some CLox values and unwraps them into native C structs or values
 #define AS_BOOL(value) ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
 #define AS_OBJ(value) ((value).as.obj)
