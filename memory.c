@@ -16,11 +16,12 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
 void freeObject(Obj* object) {
     switch(object->type) {
-        case OBJ_STRING:
-           ObjString* s = (ObjString*)object;
-           FREE_ARRAY(char, s->chars, s->length + 1);
-           FREE(ObjString, object); 
-           break;
+        case OBJ_STRING: {
+            ObjString* s = (ObjString*)object;
+            FREE_ARRAY(char, s->chars, s->length + 1);
+            FREE(ObjString, object); 
+            break;
+        }
     }
 }
 
