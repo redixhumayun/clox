@@ -43,7 +43,7 @@ static void concatenate() {
   memcpy(combinedString + aString->length, bString->chars, bString->length);
   combinedString[combinedLength] = '\0';
 
-  ObjString* result = allocateString(combinedString, combinedLength);
+  ObjString* result = takeString(combinedString, combinedLength);
   push(OBJ_VAL(result));
 }
 
