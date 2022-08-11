@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "memory.h"
 #include "table.h"
@@ -71,15 +72,6 @@ bool tableSet(Table* table, ObjString* key, Value value) {
   return isNewKey;
 }
 
-void tableAddAll(Table* from, Table* to) {
-  for (int i = 0; i < from->capacity; i++) {
-    Entry* entry = &from->entries[i];
-    if (entry->key != NULL) {
-      tableSet(to, entry->key, entry->value);
-    }
-  }
-}
-
 bool tableGet(Table* table, ObjString* key, Value* value) {
   if (table->capacity == 0) return false;
 
@@ -103,6 +95,36 @@ bool tableDelete(Table* table, ObjString* key) {
   entry->key = NULL;
   entry->value = BOOL_VAL(true);
   return true;
+}
+
+void tableAddAll(Table* from, Table* to) {
+  for (int i = 0; i < from->capacity; i++) {
+    Entry* entry = &from->entries[i];
+    if (entry->key != NULL) {
+      tableSet(to, entry->key, entry->value);
+    }
+  }
+}
+
+ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t hash) {
+  if (table->count == 0) return NULL;
+
+  uint32_t index = hash % table->capacity;
+  Entry* entries = table->entries;
+
+  for (;;) {
+    Entry* entry = &entries[index];
+    if (entry->key == NULL) {
+      if (IS_NIL(entry->value)) {
+        return NULL;
+      }
+    } else if (entry->key->length == length && 
+                entry->key->hash == hash && 
+                memcmp(entry->key->chars, chars, length) == 0) {
+                  return entry;
+                }
+    index = (index + 1) % table->capacity;
+  }
 }
 
 void freeTable(Table* table) {

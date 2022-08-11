@@ -37,13 +37,39 @@ static uint32_t hashString(const char* key, int length) {
   return hash;
 }
 
+/**
+ * @brief This method is used when a copy of the original string does not need to be created.
+ * It is mainly used while concatenating strings together in the VM
+ * 
+ * @param chars 
+ * @param length 
+ * @return ObjString* 
+ */
 ObjString* takeString(char* chars, int length) {
     uint32_t hash = hashString(chars, length);
+    ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
+    if (interned != NULL) {
+        FREE_ARRAY(char, chars, length + 1);
+        return interned;
+    }
     return allocateString(chars, length, hash);
 }
 
+/**
+ * @brief This method is used when copying a string found by the compiler in source code
+ * onto the heap allocated by the vm.
+ * A copy of the string is created onto the heap
+ * 
+ * @param chars 
+ * @param length 
+ * @return ObjString* 
+ */
 ObjString* copyString(const char* chars, int length) {
     uint32_t hash = hashString(chars, length);
+    ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
+    if (interned != NULL) {
+        return interned;
+    }
     char* heapChars = ALLOCATE(char, length + 1);
     memcpy(heapChars, chars, length);
     heapChars[length] = '\0';
