@@ -58,52 +58,52 @@ void runFile(const char* path) {
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-// int main(int argc, const char* argv[]) {
-//   initVM();
+int main(int argc, const char* argv[]) {
+  initVM();
 
-//   if (argc == 1) {
-//     repl();
-//   } else if (argc == 2) {
-//     runFile(argv[1]);
-//   } else {
-//     fprintf(stderr, "Usage: clox [PATH]");
-//     exit(64);
-//   }
-
-//   freeVM();
-//   return 0;
-// }
-
-static void randomString(char* chars, int length) {
-  char charset[] = "0123456789"
-                    "abcdefghijklmnopqrstuvwxyz"
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  
-  while (length-- > 0) {
-    size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
-    *chars++ = charset[index];
+  if (argc == 1) {
+    repl();
+  } else if (argc == 2) {
+    runFile(argv[1]);
+  } else {
+    fprintf(stderr, "Usage: clox [PATH]");
+    exit(64);
   }
-  *chars = '\0';
-}
 
-int main (int argc, char* argv[]) {
-  //  This main function is currently being used to test out the implementation of the hash table
-  char chars[10] = "";
-
-  clock_t begin = clock();
-  for (int i = 0; i < 10; i++) {
-    randomString(chars, 10);
-    printf("Printing random string that was generated: %s\n", chars);
-    ObjString* objString = takeString(chars, 10);
-    bool objStringFound = tableGet(&vm.strings, objString, &NIL_VAL);
-    if (objStringFound == true) {
-      printf("Found string: %s\n", chars);
-    } else {
-      printf("Did not find string: %s\n", chars);
-    }
-  }
-  clock_t end = clock();
-  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-  printf("%f\n", time_spent);
+  freeVM();
   return 0;
 }
+
+// static void randomString(char* chars, int length) {
+//   char charset[] = "0123456789"
+//                     "abcdefghijklmnopqrstuvwxyz"
+//                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+//   while (length-- > 0) {
+//     size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
+//     *chars++ = charset[index];
+//   }
+//   *chars = '\0';
+// }
+
+// int main (int argc, char* argv[]) {
+//   //  This main function is currently being used to test out the implementation of the hash table
+//   char chars[10] = "";
+
+//   clock_t begin = clock();
+//   for (int i = 0; i < 10; i++) {
+//     randomString(chars, 10);
+//     printf("Printing random string that was generated: %s\n", chars);
+//     ObjString* objString = takeString(chars, 10);
+//     bool objStringFound = tableGet(&vm.strings, objString, &NIL_VAL);
+//     if (objStringFound == true) {
+//       printf("Found string: %s\n", chars);
+//     } else {
+//       printf("Did not find string: %s\n", chars);
+//     }
+//   }
+//   clock_t end = clock();
+//   double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+//   printf("%f\n", time_spent);
+//   return 0;
+// }
