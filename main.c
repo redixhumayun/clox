@@ -7,6 +7,7 @@
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
+#include "object.h"
 
 void repl() {
   char line[1024];
@@ -73,19 +74,33 @@ void runFile(const char* path) {
 //   return 0;
 // }
 
+static void randomString(char* chars, int length) {
+  char charset[] = "0123456789"
+                    "abcdefghijklmnopqrstuvwxyz"
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+  while (length-- > 0) {
+    size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
+    *chars++ = charset[index];
+  }
+  *chars = '\0';
+}
+
 int main (int argc, char* argv[]) {
   //  This main function is currently being used to test out the implementation of the hash table
+  char chars[10] = "";
+
   clock_t begin = clock();
-  Table table;
-  initTable(&table);
-  Obj* a = (Obj*)"Hello World!";
-  ObjString* aString = (ObjString*) a;
-  tableSet(&table, aString, NIL_VAL);
-  bool ret = tableGet(&table, aString, &NIL_VAL);
-  if (ret == true) {
-    printf("Found the string\n");
-  } else {
-    printf("Could not find the string\n");
+  for (int i = 0; i < 10; i++) {
+    randomString(chars, 10);
+    printf("Printing random string that was generated: %s\n", chars);
+    ObjString* objString = takeString(chars, 10);
+    bool objStringFound = tableGet(&vm.strings, objString, &NIL_VAL);
+    if (objStringFound == true) {
+      printf("Found string: %s\n", chars);
+    } else {
+      printf("Did not find string: %s\n", chars);
+    }
   }
   clock_t end = clock();
   double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
