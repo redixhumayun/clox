@@ -38,8 +38,26 @@ void adjustCapacity(Table* table, int capacity) {
   table->capacity = capacity;
 }
 
-Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
-  uint32_t tableIndex = key->hash % capacity;
+Entry* findEntry(Entry* entries, int capacity, Key* key) {
+  uint32_t tableIndex;
+  // uint32_t tableIndex = key->hash % capacity;
+  switch (key->type) {
+    case KEY_BOOL:
+      tableIndex = key->as.boolean == false ? 0 % capacity : 1 % capacity;
+      break;
+    case KEY_NUMBER:
+      tableIndex = key->as.number % capacity;
+      break;
+    case KEY_STRING:
+      printf("Hash Value: %d\n", key->as.string->hash);
+      tableIndex = key->as.string->hash % capacity;
+      break;
+    case KEY_NIL:
+      fprintf(stderr, "This case is not handled yet\n");
+      break;
+    default:
+      fprintf(stderr, "This key type is unknown\n");
+  }
   Entry* tombstone = NULL;
 
   for(;;) {
@@ -59,7 +77,7 @@ Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
   }
 }
 
-bool tableSet(Table* table, ObjString* key, Value value) {
+bool tableSet(Table* table, Key* key, Value value) {
   if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
     int capacity = GROW_CAPACITY(table->capacity);
     adjustCapacity(table, capacity);
@@ -120,11 +138,28 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
       if (IS_NIL(entry->value)) {
         return NULL;
       }
-    } else if (entry->key->length == length && 
-                entry->key->hash == hash && 
-                memcmp(entry->key->chars, chars, length) == 0) {
-                  return entry->key;
-                }
+    } 
+    else {
+      switch (entry->key->type) {
+        case KEY_STRING:
+          if (entry->key->as.string->length == length &&
+              entry->key->as.string->hash == hash &&
+              memcmp(entry->key->as.string->chars, chars, length) == 0) {
+                return entry->key;
+              }
+        case KEY_BOOL:
+          break;
+        case KEY_NIL:
+          break;
+        case KEY_NUMBER:
+          break;
+      }
+    }
+    // else if (entry->key->length == length && 
+    //             entry->key->hash == hash && 
+    //             memcmp(entry->key->chars, chars, length) == 0) {
+    //               return entry->key;
+    //             }
     index = (index + 1) % table->capacity;
   }
 }

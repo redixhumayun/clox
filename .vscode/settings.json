@@ -46,7 +46,13 @@
         "type_traits": "c",
         "array": "c",
         "utility": "c",
-        "common.h": "c"
+        "common.h": "c",
+        "__threading_support": "c",
+        "__functional_base_03": "c",
+        "__hash_table": "c",
+        "__tuple": "c",
+        "compare": "c",
+        "memory": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false

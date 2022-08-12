@@ -35,6 +35,7 @@ ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
 void printObject(Value value);
 ObjString* allocateString(char* chars, int length, uint32_t hash);
+uint32_t hashString(const char* key, int length);
 
 //  This function will check if the value provided has the same type as the parameter
 static inline bool isObjType(Value value, ObjType type) {
