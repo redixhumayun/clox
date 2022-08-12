@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "common.h"
 #include "chunk.h"
@@ -56,18 +57,38 @@ void runFile(const char* path) {
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-int main(int argc, const char* argv[]) {
-  initVM();
+// int main(int argc, const char* argv[]) {
+//   initVM();
 
-  if (argc == 1) {
-    repl();
-  } else if (argc == 2) {
-    runFile(argv[1]);
+//   if (argc == 1) {
+//     repl();
+//   } else if (argc == 2) {
+//     runFile(argv[1]);
+//   } else {
+//     fprintf(stderr, "Usage: clox [PATH]");
+//     exit(64);
+//   }
+
+//   freeVM();
+//   return 0;
+// }
+
+int main (int argc, char* argv[]) {
+  //  This main function is currently being used to test out the implementation of the hash table
+  clock_t begin = clock();
+  Table table;
+  initTable(&table);
+  Obj* a = (Obj*)"Hello World!";
+  ObjString* aString = (ObjString*) a;
+  tableSet(&table, aString, NIL_VAL);
+  bool ret = tableGet(&table, aString, &NIL_VAL);
+  if (ret == true) {
+    printf("Found the string\n");
   } else {
-    fprintf(stderr, "Usage: clox [PATH]");
-    exit(64);
+    printf("Could not find the string\n");
   }
-
-  freeVM();
+  clock_t end = clock();
+  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  printf("%f\n", time_spent);
   return 0;
 }

@@ -4,7 +4,7 @@
 #include "memory.h"
 #include "table.h"
 #include "object.h"
-#include "memory.h"
+#include "value.h"
 
 void initTable(Table* table) {
   table->count = 0;
