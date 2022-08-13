@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "memory.h"
 #include "table.h"
@@ -49,7 +50,6 @@ Entry* findEntry(Entry* entries, int capacity, Key* key) {
       tableIndex = key->as.number % capacity;
       break;
     case KEY_STRING:
-      printf("Hash Value: %d\n", key->as.string->hash);
       tableIndex = key->as.string->hash % capacity;
       break;
     case KEY_NIL:

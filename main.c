@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "common.h"
 #include "chunk.h"
@@ -94,12 +95,10 @@ int main (int argc, char* argv[]) {
   initTable(&table);
 
   char string[] = "Hello World";
-  ObjString* objString = realloc(NULL, sizeof(ObjString*));
+  ObjString* objString = malloc(sizeof(*objString));
   objString->chars = string;
   objString->length = strlen(string);
   objString->hash = hashString(string, strlen(string));
-  printf("ObjString length: %d\n", objString->length);
-  printf("ObjString hash: %d\n", objString->hash);
 
   Key k = { KEY_STRING, { .string = objString } };
 
