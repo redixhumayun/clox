@@ -8,6 +8,12 @@ typedef enum KeyType {
   KEY_STRING
 } KeyType;
 
+typedef union {
+  bool boolean;
+  int number;
+  ObjString* string;
+} as;
+
 typedef struct Key {
   KeyType type;
   union {
@@ -29,10 +35,15 @@ typedef struct Table {
   Entry* entries;
 } Table;
 
+#define ALLOCATE_KEY(keyType, value) (Key*)allocateKey(keyType, value)
+
+Key* allocateKey(KeyType keyType, as value);
+void printEntry(Entry* entry);
+
 void initTable(Table* table);
-bool tableGet(Table* table, ObjString* key, Value* value);
+bool tableGet(Table* table, Key* key, Value* value);
 bool tableSet(Table* table, Key* key, Value value);
-bool tableDelete(Table* table, ObjString* key);
+bool tableDelete(Table* table, Key* key);
 void tableAddAll(Table* from, Table* to);
 Entry* findEntry(Entry* entries, int capacity, Key* key);
 ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t hash);

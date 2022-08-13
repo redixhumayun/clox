@@ -100,21 +100,48 @@ int main (int argc, char* argv[]) {
   objString->length = strlen(string);
   objString->hash = hashString(string, strlen(string));
 
-  Key k = { KEY_STRING, { .string = objString } };
+  // as value = { .string = objString };
+  // Key* k = ALLOCATE_KEY(KEY_STRING, value);
+  as value = { .number = 123 };
+  Key* k = ALLOCATE_KEY(KEY_NUMBER, value);
+  // as value = { .boolean = true };
+  // Key* k = ALLOCATE_KEY(KEY_BOOL, value);
 
-  bool result = tableSet(&table, &k, NIL_VAL);
+  bool result = tableSet(&table, k, NIL_VAL);
   if (result == true) {
     printf("Successfully inserted the key in\n");
   } else {
     fprintf(stderr, "Something went wrong while inserting the key in\n");
   }
 
-  Entry* entry = findEntry(table.entries, table.capacity, &k);
+  bool result_get = tableGet(&table, k, &NIL_VAL);
+  if (result_get == true) {
+    printf("Successfully got the key from the table\n");
+  } else {
+    printf("Could not get the key from the table\n");
+  }
+
+  Entry* entry = findEntry(table.entries, table.capacity, k);
   if (entry == NULL) {
     fprintf(stderr, "Something went wrong while retrieving the value from the table\n");
   } else {
     printf("Found the string in the table\n");
-    printf("%s\n", entry->key->as.string->chars);
+    // printf("%s\n", entry->key->as.string->chars);
+    printEntry(entry);
+  }
+
+  bool result_delete = tableDelete(&table, k);
+  if (result_delete == true) {
+    printf("Successfully deleted the key from the table\n");
+  } else {
+    printf("Could not delete the key from the table\n");
+  }
+
+  Entry* e = findEntry(table.entries, table.capacity, k);
+  if (e->key == NULL && IS_BOOL(e->value) && AS_BOOL(e->value) == true) {
+    printf("Could not find the entry after deleting it! Success\n");
+  } else {
+    printf("Something went wrong, the entry is still in the table\n");
   }
 
   // clock_t begin = clock();

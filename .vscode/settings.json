@@ -52,7 +52,8 @@
         "__hash_table": "c",
         "__tuple": "c",
         "compare": "c",
-        "memory": "c"
+        "memory": "c",
+        "unity.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false

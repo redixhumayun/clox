@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
+#include <stdlib.h>
 
 #include "memory.h"
 #include "table.h"
@@ -8,6 +8,51 @@
 #include "value.h"
 
 #define TABLE_MAX_LOAD 0.75
+
+Key* allocateKey(KeyType keyType, as value) {
+  size_t size = sizeof(keyType);
+  Key* key = (Key*)reallocate(NULL, 0, size);
+  key->type = keyType;
+  switch (keyType) {
+    case KEY_BOOL:
+      key->as.boolean = value.boolean;
+      break;
+    case KEY_NUMBER:
+      key->as.number = value.number;
+      break;
+    case KEY_STRING:
+    key->as.string = value.string;
+      break;
+    default:
+      fprintf(stderr, "Could not identify this key type\n");
+      exit(1);
+  }
+  return key;
+}
+
+static void printKey(Key* key) {
+  switch(key->type) {
+    case KEY_BOOL:
+      printf("%s\n", key->as.boolean ? "true" : false);
+      break;
+    case KEY_NUMBER:
+      printf("%d\n", key->as.number);
+      break;
+    case KEY_STRING:
+      printf("%s\n", key->as.string->chars);
+      break;
+    case KEY_NIL:
+      break;
+    default:
+      fprintf(stderr, "Unknown key type");
+      break;
+  }
+}
+
+void printEntry(Entry* entry) {
+  Key* key = entry->key;
+  printKey(key);
+}
 
 void initTable(Table* table) {
   table->count = 0;
@@ -92,7 +137,7 @@ bool tableSet(Table* table, Key* key, Value value) {
   return isNewKey;
 }
 
-bool tableGet(Table* table, ObjString* key, Value* value) {
+bool tableGet(Table* table, Key* key, Value* value) {
   if (table->capacity == 0) return false;
 
   Entry* entry = findEntry(table->entries, table->capacity, key);
@@ -102,7 +147,7 @@ bool tableGet(Table* table, ObjString* key, Value* value) {
   return true;
 }
 
-bool tableDelete(Table* table, ObjString* key) {
+bool tableDelete(Table* table, Key* key) {
   if (table->count == 0) return false;
   Entry* entries = table->entries;
   Entry* entry = findEntry(entries, table->capacity, key);
@@ -145,7 +190,7 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
           if (entry->key->as.string->length == length &&
               entry->key->as.string->hash == hash &&
               memcmp(entry->key->as.string->chars, chars, length) == 0) {
-                return entry->key;
+                return entry->key->as.string;
               }
         case KEY_BOOL:
           break;
