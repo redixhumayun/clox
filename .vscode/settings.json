@@ -46,7 +46,10 @@
         "type_traits": "c",
         "array": "c",
         "utility": "c",
-        "common.h": "c"
+        "common.h": "c",
+        "compiler.h": "c",
+        "stdbool.h": "c",
+        "stddef.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
