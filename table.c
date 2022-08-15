@@ -103,7 +103,6 @@ Entry* findEntry(Entry* entries, int capacity, Key* key) {
     default:
       fprintf(stderr, "This key type is unknown\n");
   }
-  printf("%d\n", tableIndex);
   Entry* tombstone = NULL;
 
   for(;;) {
@@ -202,11 +201,6 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
           break;
       }
     }
-    // else if (entry->key->length == length && 
-    //             entry->key->hash == hash && 
-    //             memcmp(entry->key->chars, chars, length) == 0) {
-    //               return entry->key;
-    //             }
     index = (index + 1) % table->capacity;
   }
 }

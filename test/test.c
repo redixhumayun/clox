@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../unity.h"
+#include "unity.h"
 #include "../table.h"
 
 Table table;
