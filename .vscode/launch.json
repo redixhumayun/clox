@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "cwd": ".",
             "request": "launch",
-            "program": "${workspaceFolder}/a.out",
+            "program": "${workspaceFolder}/out",
             "args": ["${workspaceFolder}/lox"],
             "MIMode": "lldb"
         }

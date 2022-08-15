@@ -59,105 +59,30 @@ void runFile(const char* path) {
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-// int main(int argc, const char* argv[]) {
-//   initVM();
-
-//   if (argc == 1) {
-//     repl();
-//   } else if (argc == 2) {
-//     runFile(argv[1]);
-//   } else {
-//     fprintf(stderr, "Usage: clox [PATH]");
-//     exit(64);
-//   }
-
-//   freeVM();
-//   return 0;
-// }
-
-// static void randomString(char* chars, int length) {
-//   char charset[] = "0123456789"
-//                     "abcdefghijklmnopqrstuvwxyz"
-//                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  
-//   while (length-- > 0) {
-//     size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
-//     *chars++ = charset[index];
-//   }
-//   *chars = '\0';
-// }
-
-int main (int argc, char* argv[]) {
-  #include <string.h>
+int main(int argc, const char* argv[]) {
   initVM();
-  //  This main function is currently being used to test out the implementation of the hash table
-  Table table;
-  initTable(&table);
 
-  char string[] = "Hello World";
-  ObjString* objString = malloc(sizeof(*objString));
-  objString->chars = string;
-  objString->length = strlen(string);
-  objString->hash = hashString(string, strlen(string));
-
-  // as value = { .string = objString };
-  // Key* k = ALLOCATE_KEY(KEY_STRING, value);
-  as value = { .number = 123 };
-  Key* k = ALLOCATE_KEY(KEY_NUMBER, value);
-  // as value = { .boolean = true };
-  // Key* k = ALLOCATE_KEY(KEY_BOOL, value);
-
-  bool result = tableSet(&table, k, NIL_VAL);
-  if (result == true) {
-    printf("Successfully inserted the key in\n");
+  if (argc == 1) {
+    repl();
+  } else if (argc == 2) {
+    runFile(argv[1]);
   } else {
-    fprintf(stderr, "Something went wrong while inserting the key in\n");
+    fprintf(stderr, "Usage: clox [PATH]");
+    exit(64);
   }
 
-  bool result_get = tableGet(&table, k, &NIL_VAL);
-  if (result_get == true) {
-    printf("Successfully got the key from the table\n");
-  } else {
-    printf("Could not get the key from the table\n");
-  }
-
-  Entry* entry = findEntry(table.entries, table.capacity, k);
-  if (entry == NULL) {
-    fprintf(stderr, "Something went wrong while retrieving the value from the table\n");
-  } else {
-    printf("Found the string in the table\n");
-    // printf("%s\n", entry->key->as.string->chars);
-    printEntry(entry);
-  }
-
-  bool result_delete = tableDelete(&table, k);
-  if (result_delete == true) {
-    printf("Successfully deleted the key from the table\n");
-  } else {
-    printf("Could not delete the key from the table\n");
-  }
-
-  Entry* e = findEntry(table.entries, table.capacity, k);
-  if (e->key == NULL && IS_BOOL(e->value) && AS_BOOL(e->value) == true) {
-    printf("Could not find the entry after deleting it! Success\n");
-  } else {
-    printf("Something went wrong, the entry is still in the table\n");
-  }
-
-  // clock_t begin = clock();
-  // for (int i = 0; i < 10; i++) {
-  //   randomString(chars, 10);
-  //   printf("Printing random string that was generated: %s\n", chars);
-  //   ObjString* objString = takeString(chars, 10);
-  //   bool objStringFound = tableGet(&vm.strings, objString, &NIL_VAL);
-  //   if (objStringFound == true) {
-  //     printf("Found string: %s\n", chars);
-  //   } else {
-  //     printf("Did not find string: %s\n", chars);
-  //   }
-  // }
-  // clock_t end = clock();
-  // double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-  // printf("%f\n", time_spent);
+  freeVM();
   return 0;
+}
+
+static void randomString(char* chars, int length) {
+  char charset[] = "0123456789"
+                    "abcdefghijklmnopqrstuvwxyz"
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+  while (length-- > 0) {
+    size_t index = (double) rand() / RAND_MAX * (sizeof charset - 1);
+    *chars++ = charset[index];
+  }
+  *chars = '\0';
 }

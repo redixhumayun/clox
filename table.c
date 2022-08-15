@@ -103,6 +103,7 @@ Entry* findEntry(Entry* entries, int capacity, Key* key) {
     default:
       fprintf(stderr, "This key type is unknown\n");
   }
+  printf("%d\n", tableIndex);
   Entry* tombstone = NULL;
 
   for(;;) {
@@ -115,7 +116,8 @@ Entry* findEntry(Entry* entries, int capacity, Key* key) {
         //  found a tombstone
         if (tombstone == NULL) tombstone = entry; 
       }
-    }else if (entry->key == key) {
+    }
+    else if (entry->key == key) {
       return entry;
     }
     tableIndex = (tableIndex + 1) % capacity;
