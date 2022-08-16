@@ -49,7 +49,9 @@
         "common.h": "c",
         "compiler.h": "c",
         "stdbool.h": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "__split_buffer": "c",
+        "unordered_map": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
