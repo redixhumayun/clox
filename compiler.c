@@ -47,9 +47,15 @@ typedef struct {
 } Local;
 
 typedef struct {
+  Token name;
+} Final;
+
+typedef struct {
   Local locals[UINT8_COUNT];
+  Token finals[UINT8_COUNT];
   int scopeDepth;
   int localCount;
+  int finalsCount;
 } Compiler;
 
 Parser parser;
@@ -61,6 +67,7 @@ static void statement();
 static void declaration();
 static ParseRule getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
+static void synchronize();
 
 static Chunk* currentChunk() {
   return compilingChunk;
@@ -257,6 +264,16 @@ static void string(bool canAssign) {
   emitConstant(OBJ_VAL(objectString));
 }
 
+static bool checkIfFinalVariable(Token name) {
+  //  Check if the variable is defined in the finals array
+  for(int i = 0; i < current->finalsCount; i++) {
+    if (identifiersEqual(&(current->finals[i]), &name)) {
+      error("Trying to set the value for a final variable. This operation is not allowed");
+      return true;
+    }
+  }
+}
+
 static void namedVariable(Token name, bool canAssign) {
   uint8_t getOp, setOp;
   int arg = resolveLocal(current, &name);
@@ -270,8 +287,10 @@ static void namedVariable(Token name, bool canAssign) {
   }
 
   if (canAssign && match(TOKEN_EQUAL)) {
-    expression();
-    emitBytes(setOp, (uint8_t)arg);
+    if (checkIfFinalVariable(name) == false) {
+      expression();
+      emitBytes(setOp, (uint8_t)arg);
+    }
   } else {
     emitBytes(getOp, (uint8_t)arg);
   }
@@ -331,6 +350,7 @@ ParseRule rules[] = {
   [TOKEN_THIS]          = {NULL,     NULL,   PREC_NONE},
   [TOKEN_TRUE]          = {literal,     NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FINAL]         = {variable,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
@@ -350,7 +370,6 @@ static void parsePrecedence(Precedence precedence) {
   bool canAssign = precedence <= PREC_ASSIGNMENT;
   prefixRule(canAssign);
 
-  Precedence p = getRule(parser.current.type).precedence;
   while (precedence <= getRule(parser.current.type).precedence) {
     advance();
     ParseFn infixRule = getRule(parser.previous.type).infix;
@@ -407,6 +426,53 @@ static void printStatement() {
   emitByte(OP_PRINT);
 }
 
+static void expressionStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect semicolon at the end of an expression");
+  emitByte(OP_POP);
+}
+
+static void statement() {
+  if (match(TOKEN_PRINT)) {
+    printStatement();
+  } else if (match(TOKEN_LEFT_BRACE)) {
+    beginScope();
+    block();
+    endScope();
+  } else {
+    expressionStatement();
+  }
+}
+
+static void varDeclaration(bool isFinal) {
+  uint8_t global = parseVariable("Expect variable name");
+  Token name = parser.previous;
+  if (match(TOKEN_EQUAL)) {
+    expression();
+  } else {
+    emitByte(TOKEN_NIL);
+  }
+  consume(TOKEN_SEMICOLON, "Expect a semicolon at the end of a variable declaration");
+  if (isFinal == true) {
+    current->finals[current->finalsCount++] = name;
+  }
+  defineVariable(global);
+}
+
+static void declaration() {
+  if (match(TOKEN_VAR)) {
+    varDeclaration(false);
+  } else if(match(TOKEN_FINAL)) {
+    varDeclaration(true);
+  } else {
+    statement();
+  }
+
+  if (parser.panicMode) {
+    synchronize();
+  }
+}
+
 static void synchronize() {
   parser.panicMode = false;
 
@@ -431,50 +497,10 @@ static void synchronize() {
   }
 }
 
-static void expressionStatement() {
-  expression();
-  consume(TOKEN_SEMICOLON, "Expect semicolon at the end of an expression");
-  emitByte(OP_POP);
-}
-
-static void statement() {
-  if (match(TOKEN_PRINT)) {
-    printStatement();
-  } else if (match(TOKEN_LEFT_BRACE)) {
-    beginScope();
-    block();
-    endScope();
-  } else {
-    expressionStatement();
-  }
-}
-
-static void varDeclaration() {
-  uint8_t global = parseVariable("Expect variable name");
-  if (match(TOKEN_EQUAL)) {
-    expression();
-  } else {
-    emitByte(TOKEN_NIL);
-  }
-  consume(TOKEN_SEMICOLON, "Expect a semicolon at the end of a variable declaration");
-  defineVariable(global);
-}
-
-static void declaration() {
-  if (match(TOKEN_VAR)) {
-    varDeclaration();
-  } else {
-    statement();
-  }
-
-  if (parser.panicMode) {
-    synchronize();
-  }
-}
-
 static void initCompiler(Compiler* compiler) {
   compiler->localCount = 0;
   compiler->scopeDepth = 0;
+  compiler->finalsCount = 0;
   current = compiler;
 }
 
