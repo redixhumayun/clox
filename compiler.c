@@ -541,9 +541,11 @@ static void defaultCase() {
 static int switchCase() {
   expression();
   consume(TOKEN_COLON, "Expect ':' after the case expression");
+  
   emitByte(OP_SWITCH_COMPARE);  //  special op code for switch statements
   int caseJump = emitJump(OP_JUMP_IF_FALSE);
   statement();
+
   int endJump = emitJump(OP_JUMP);
   patchJump(caseJump);
   emitByte(OP_POP); //  remove the result of the OP_SWITCH_COMPARE
