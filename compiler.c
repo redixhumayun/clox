@@ -152,6 +152,17 @@ static int emitJump(uint8_t instruction) {
   return currentChunk()->count - 2;
 }
 
+static void patchJump(int offset) {
+  int jump = currentChunk()->count - offset - 2;
+
+  if (jump > UINT16_MAX) {
+    error("Too much code to jump over");
+  }
+
+  currentChunk()->code[offset] = (jump >> 8) & 0xff;
+  currentChunk()->code[offset + 1] = (jump & 0xff);
+}
+
 static void emitReturn() {
   emitByte(OP_RETURN);
 }
@@ -168,17 +179,6 @@ static uint8_t makeConstant(Value value) {
 
 static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
-}
-
-static void patchJump(int offset) {
-  int jump = currentChunk()->count - offset - 2;
-
-  if (jump > UINT16_MAX) {
-    error("Too much code to jump over");
-  }
-
-  currentChunk()->code[offset] = (jump >> 8) & 0xff;
-  currentChunk()->code[offset + 1] = (jump & 0xff);
 }
 
 static void binary(bool canAssign) {
@@ -538,13 +538,16 @@ static void defaultCase() {
   statement();
 }
 
-static void switchCase() {
+static int switchCase() {
   expression();
   consume(TOKEN_COLON, "Expect ':' after the case expression");
-  emitByte(OP_EQUAL);
+  emitByte(OP_SWITCH_COMPARE);  //  special op code for switch statements
   int caseJump = emitJump(OP_JUMP_IF_FALSE);
   statement();
+  int endJump = emitJump(OP_JUMP);
   patchJump(caseJump);
+  emitByte(OP_POP); //  remove the result of the OP_SWITCH_COMPARE
+  return endJump;
 }
 
 static void switchStatement() {
@@ -554,16 +557,21 @@ static void switchStatement() {
 
   consume(TOKEN_LEFT_BRACE, "Expect '{' before switch body");
 
+  int endJump = -1;
+
   while (match(TOKEN_CASE)) {
-    switchCase();
+    endJump = switchCase();
   }
   
   if (!match(TOKEN_CASE_DEFAULT)) {
     error("Expect every switch case statement to have a default case");
   }
-  defaultCase();
 
-  //  emitting OP_POP to remove the value added from evaluation expression earlier
+  defaultCase();
+  if (endJump != -1) {
+    patchJump(endJump);
+  }
+  //  emitting OP_POP to remove the value added from evaluating expression earlier
   emitByte(OP_POP);
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body");
 }
