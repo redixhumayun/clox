@@ -533,6 +533,41 @@ static void forStatement() {
   endScope();
 }
 
+static void defaultCase() {
+  consume(TOKEN_COLON, "Expect ':' after default expression");
+  statement();
+}
+
+static void switchCase() {
+  expression();
+  consume(TOKEN_COLON, "Expect ':' after the case expression");
+  emitByte(OP_EQUAL);
+  int caseJump = emitJump(OP_JUMP_IF_FALSE);
+  statement();
+  patchJump(caseJump);
+}
+
+static void switchStatement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' before switch expression");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after switch expression");
+
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before switch body");
+
+  while (match(TOKEN_CASE)) {
+    switchCase();
+  }
+  
+  if (!match(TOKEN_CASE_DEFAULT)) {
+    error("Expect every switch case statement to have a default case");
+  }
+  defaultCase();
+
+  //  emitting OP_POP to remove the value added from evaluation expression earlier
+  emitByte(OP_POP);
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body");
+}
+
 static void expressionStatement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expect semicolon at the end of an expression");
@@ -548,6 +583,8 @@ static void statement() {
     whileStatement();
   } else if (match(TOKEN_FOR)) {
     forStatement();
+  } else if (match(TOKEN_SWITCH)) {
+    switchStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     beginScope();
     block();
