@@ -38,6 +38,14 @@ static uint32_t hashString(const char* key, int length) {
   return hash;
 }
 
+ObjFunction* newFunction() {
+    ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+    function->arity = 0;
+    function->name = NULL;
+    initChunk(&function->chunk);
+    return function;
+}
+
 /**
  * @brief This method is used when a copy of the original string does not need to be created.
  * It is mainly used while concatenating strings together in the VM
@@ -77,11 +85,17 @@ ObjString* copyString(const char* chars, int length) {
     return allocateString(heapChars, length, hash);
 }
 
+static void printFunction(ObjFunction* function) {
+    printf("<fn %s>", function->name->chars);
+}
+
 void printObject(Value value) {
     switch(OBJ_TYPE(value)) {
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
             break;
+        case OBJ_FUNCTION:
+            printFunction(AS_FUNCTION(value));
         default:
             fprintf(stderr, "Object is of unknown type");
     }
