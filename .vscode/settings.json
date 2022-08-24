@@ -51,7 +51,9 @@
         "stdbool.h": "c",
         "stddef.h": "c",
         "__split_buffer": "c",
-        "unordered_map": "c"
+        "unordered_map": "c",
+        "mutex": "c",
+        "stop_token": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
