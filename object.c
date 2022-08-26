@@ -86,6 +86,10 @@ ObjString* copyString(const char* chars, int length) {
 }
 
 static void printFunction(ObjFunction* function) {
+    if (function->name == NULL) {
+        printf("<script>");
+        return;
+    }
     printf("<fn %s>", function->name->chars);
 }
 
@@ -96,6 +100,7 @@ void printObject(Value value) {
             break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
+            break;
         default:
             fprintf(stderr, "Object is of unknown type");
     }

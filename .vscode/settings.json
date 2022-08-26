@@ -53,7 +53,9 @@
         "__split_buffer": "c",
         "unordered_map": "c",
         "mutex": "c",
-        "stop_token": "c"
+        "stop_token": "c",
+        "table.h": "c",
+        "object.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
