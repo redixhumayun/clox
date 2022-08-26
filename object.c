@@ -46,6 +46,12 @@ ObjFunction* newFunction() {
     return function;
 }
 
+ObjNative* newNative(NativeFn function) {
+    ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
+}
+
 /**
  * @brief This method is used when a copy of the original string does not need to be created.
  * It is mainly used while concatenating strings together in the VM
@@ -100,6 +106,9 @@ void printObject(Value value) {
             break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
+            break;
+        case OBJ_NATIVE:
+            printf("<native fn>");
             break;
         default:
             fprintf(stderr, "Object is of unknown type");
