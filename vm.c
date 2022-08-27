@@ -3,6 +3,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <time.h>
+#include <math.h>
 
 #include "vm.h"
 #include "chunk.h"
@@ -17,6 +18,10 @@ VM vm;
 
 static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
+static Value squareRoot(int argCount, Value* args) {
+  return NUMBER_VAL(sqrt(AS_NUMBER(*args)));
 }
 
 static void runtimeError(const char* format, ...);
@@ -57,6 +62,10 @@ static bool callValue(Value callee, int argCount) {
       case OBJ_FUNCTION: 
         return call(AS_FUNCTION(callee), argCount);
       case OBJ_NATIVE: {
+        ObjNative* nativeFunctionObject = AS_NATIVE_FUNCTION_OBJECT(callee);
+        if (argCount != nativeFunctionObject->arity) {
+          runtimeError("Expected %d argument(s) but got %d", nativeFunctionObject->arity, argCount);
+        }
         NativeFn native = AS_NATIVE(callee);
         Value result = native(argCount, vm.stackTop - argCount);
         vm.stackTop -= argCount + 1;
@@ -118,9 +127,9 @@ static void runtimeError(const char* format, ...) {
   resetStack();
 }
 
-static void defineNative(const char* name, NativeFn function) {
+static void defineNative(const char* name, NativeFn function, int arity) {
   push(OBJ_VAL(copyString(name, (int)strlen(name))));
-  push(OBJ_VAL(newNative(function)));
+  push(OBJ_VAL(newNative(function, arity)));
   tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
   pop();
   pop();
@@ -133,7 +142,8 @@ void initVM() {
   initTable(&vm.strings);
   initTable(&vm.globals);
 
-  defineNative("clock", clockNative);
+  defineNative("clock", clockNative, 0);
+  defineNative("squareRoot", squareRoot, 1);
 }
 
 void freeVM() {
