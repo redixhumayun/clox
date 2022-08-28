@@ -16,15 +16,20 @@
 
 VM vm;
 
+static void runtimeError(const char* format, ...);
+
 static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
 static Value squareRoot(int argCount, Value* args) {
+  //  This function expects a number
+  if (IS_NUMBER(*args) == false) {
+    runtimeError("Expected a number but got a string instead\n");
+  }
   return NUMBER_VAL(sqrt(AS_NUMBER(*args)));
 }
 
-static void runtimeError(const char* format, ...);
 
 void push(Value value) {
   *vm.stackTop = value;
