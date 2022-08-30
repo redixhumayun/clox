@@ -244,6 +244,7 @@ static void literal(bool canAssign) {
     case TOKEN_FALSE: emitByte(OP_FALSE); break;
     case TOKEN_TRUE: emitByte(OP_TRUE); break;
     case TOKEN_NIL: emitByte(OP_NIL); break;
+    default: break;
   }
 }
 
