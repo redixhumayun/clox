@@ -38,12 +38,33 @@ static uint32_t hashString(const char* key, int length) {
   return hash;
 }
 
+ObjUpvalue* newUpvalue(Value* slot) {
+    ObjUpvalue* upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
+    upvalue->location = slot;
+    upvalue->next = NULL;
+    upvalue->closed = NIL_VAL;
+    return upvalue;
+}
+
 ObjFunction* newFunction() {
     ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
+    function->upvalueCount = 0;
     function->name = NULL;
     initChunk(&function->chunk);
     return function;
+}
+
+ObjClosure* newClosure(ObjFunction* function) {
+    ObjUpvalue** upvalues = ALLOCATE(ObjUpvalue*, function->upvalueCount);
+    for (int i = 0; i < function->upvalueCount; i++) {
+        upvalues[i] = NULL;
+    }
+    ObjClosure* closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
+    closure->function = function;
+    closure->upvalues = upvalues;
+    closure->upvalueCount = function->upvalueCount;
+    return closure;
 }
 
 ObjNative* newNative(NativeFn function, int arity) {
@@ -110,6 +131,12 @@ void printObject(Value value) {
             break;
         case OBJ_NATIVE:
             printf("<native fn>");
+            break;
+        case OBJ_CLOSURE:
+            printFunction(AS_CLOSURE(value)->function);
+            break;
+        case OBJ_UPVALUE:
+            printf("upvalue");
             break;
         default:
             fprintf(stderr, "Object is of unknown type");
