@@ -53,4 +53,9 @@ print t;
 testFunctionWithoutClosures()
 
 master      optional-closure-branch
-0.0803s     
+0.0803s     0.0603s
+
+
+testFunctionWithClosures()
+master      optional-closures-branch
+0.080893s   
