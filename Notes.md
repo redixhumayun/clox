@@ -52,10 +52,12 @@ print t;
 
 testFunctionWithoutClosures()
 
-master      optional-closure-branch
-0.0803s     0.0603s
+master      optional-closure-branch   Percentage Difference
+0.0803s     0.0603s                   24.9066% decrease
 
 
 testFunctionWithClosures()
-master      optional-closures-branch
-0.080893s   
+master      optional-closures-branch  Percentage Difference
+0.080893s   0.083719s                 3.493503% increase
+
+Running functions without closures is a tiny bit faster without the overhead of the closures wrapper. However, running functions that involves closures is slightly slower when incorporating the conditional logic of wrapping the functions in closures or not. This is probably what accounts for the 3.4935% increase.
