@@ -17,9 +17,16 @@ fun testFunctionWithoutClosures() {
         print "Incorrect answer";
     }
 }
-testFunctionWithoutClosures();
+
+var start = clock();
+for (var i = 0; i < 1000; i = i + 1) {
+  testFunctionWithoutClosures();
+}
+var t = clock() - start;
+print t;
 
 Function with closures
+
 fun testFunctionWithClosures() {
   var local = "local";
   fun closure() {
@@ -30,8 +37,13 @@ fun testFunctionWithClosures() {
   }
   return closure;
 }
-var closure = testFunctionWithClosures();
-var innerClosureFunction = closure();
-innerClosureFunction();
-innerClosureFunction();
+
+var start = clock();
+for (var i = 0; i < 1000; i = i + 1) {
+    var closure = testFunctionWithClosures();
+    var innerClosureFunction = closure();
+    innerClosureFunction();
+}
+var t = clock() - start;
+print t;
 ```
