@@ -8,8 +8,17 @@
 
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+
+typedef enum {
+  CALL_FRAME_OBJ_FUNCTION,
+  CALL_FRAME_OBJ_CLOSURE
+} CallFrameType;
 typedef struct {
-  ObjClosure* closure;
+  CallFrameType type;
+  union {
+    ObjFunction* function;
+    ObjClosure* closure;
+  } as;
   uint8_t* ip;
   Value* slots;
 } CallFrame;
