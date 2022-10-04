@@ -11,10 +11,6 @@
     (structType*)allocateObject(sizeof(structType) + arrayLength * sizeof(arrayType), objectType)
 
 static Obj* allocateObject(size_t size, ObjType type) {
-    printf("Size of object struct: %zu\n", sizeof(Obj));
-    printf("Size of object type: %zu\n", sizeof(ObjType));
-    printf("Size of next pointer: %zu\n", sizeof(Obj*));
-    printf("Size of bool field: %zu\n", sizeof(bool));
     Obj* object = (Obj*)reallocate(NULL, 0, size);
     object->type = type;
     object->next = vm.objects;
