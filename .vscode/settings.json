@@ -55,7 +55,9 @@
         "mutex": "c",
         "stop_token": "c",
         "table.h": "c",
-        "object.h": "c"
+        "object.h": "c",
+        "cmath": "c",
+        "numbers": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false

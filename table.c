@@ -129,6 +129,23 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
   }
 }
 
+void markTable(Table* table) {
+  for(int i = 0; i < table->capacity; i++) {
+    Entry* entry = &table->entries[i];
+    markObject((Obj*) entry->key);
+    markValue(entry->value);
+  }
+}
+
+void tableRemoveWhites(Table* table) {
+  for (int i = 0; i < table->count; i++) {
+    Entry* entry = &table->entries[i];
+    if (entry->key != NULL && entry->key->obj.isMarked == false) {
+      tableDelete(table, entry->key);
+    }
+  }
+}
+
 void freeTable(Table* table) {
   FREE_ARRAY(Entry, table, table->count);
   initTable(table);

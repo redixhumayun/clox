@@ -11,9 +11,14 @@
     (structType*)allocateObject(sizeof(structType) + arrayLength * sizeof(arrayType), objectType)
 
 static Obj* allocateObject(size_t size, ObjType type) {
+    printf("Size of object struct: %zu\n", sizeof(Obj));
+    printf("Size of object type: %zu\n", sizeof(ObjType));
+    printf("Size of next pointer: %zu\n", sizeof(Obj*));
+    printf("Size of bool field: %zu\n", sizeof(bool));
     Obj* object = (Obj*)reallocate(NULL, 0, size);
     object->type = type;
     object->next = vm.objects;
+    object->isMarked = false;
     vm.objects = object;
     #ifdef DEBUG_LOG_GC
         printf("%p allocate %zu for %d\n", (void*)object, size, type);
@@ -27,7 +32,10 @@ ObjString* allocateString(char* chars, int length, uint32_t hash) {
     string->length = length;
     string->chars = chars;
     string->hash = hash;
+
+    push(OBJ_VAL(string));
     tableSet(&vm.strings, string, NIL_VAL);
+    pop();
     // strcpy(string->chars, chars);
     return string;
 }

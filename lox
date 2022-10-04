@@ -1,39 +1,6 @@
-fun constructor(x, y) {
-  var xVar = x;
-  var yVar = y;
-
-  fun pointClosure(variable) {
-    fun getX() {
-      return xVar;
-    }
-
-    fun getY() {
-      return yVar;
-    }
-
-    if (variable == "x") {
-      return getX;
-    } else {
-      return getY;
-    }
-  }
-
-  return pointClosure;
+fun test() {
+  return 1 + 2;
 }
 
-fun addVectors(pointClosure1, pointClosure2) {
-  var x1 = pointClosure1("x")();
-  var y1 = pointClosure1("y")();
-
-  var x2 = pointClosure2("x")();
-  var y2 = pointClosure2("y")();
-
-  var newPoint = constructor(x1 + x2, y1 + y2);
-  return newPoint;
-}
-
-var point1 = constructor(2, 4);
-var point2 = constructor(3, 6);
-var resultVector = addVectors(point1, point2);
-print resultVector("x")();
-print resultVector("y")();
+var result = test();
+print result;

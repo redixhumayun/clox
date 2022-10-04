@@ -3,7 +3,9 @@
 
 #include "chunk.h"
 #include "object.h"
+#include "memory.h"
 
 ObjFunction* compile(const char* source);
+void markCompilerRoots();
 
 #endif

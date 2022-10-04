@@ -156,8 +156,8 @@ static bool isFalsey(Value value) {
 }
 
 static void concatenate() {
-  Value b = pop();
-  Value a = pop();
+  Value b = peek(0);
+  Value a = peek(1);
   ObjString* bString = AS_STRING(b);
   ObjString* aString = AS_STRING(a);
 
@@ -168,6 +168,8 @@ static void concatenate() {
   combinedString[combinedLength] = '\0';
 
   ObjString* result = takeString(combinedString, combinedLength);
+  pop();
+  pop();
   push(OBJ_VAL(result));
 }
 
@@ -211,6 +213,14 @@ static void defineNative(const char* name, NativeFn function, int arity) {
 void initVM() {
   resetStack();
   vm.objects = NULL;
+
+  vm.grayCount = 0;
+  vm.grayCapacity = 0;
+  vm.grayStack = NULL;
+
+  vm.bytesAllocated = 0;
+  vm.nextGC = 1024*1024;
+
   initTable(&vm.strings);
   initTable(&vm.globals);
 
