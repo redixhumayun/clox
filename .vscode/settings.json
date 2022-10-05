@@ -57,7 +57,11 @@
         "table.h": "c",
         "object.h": "c",
         "cmath": "c",
-        "numbers": "c"
+        "numbers": "c",
+        "__hash_table": "c",
+        "memory": "c",
+        "thread": "c",
+        "__functional_03": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false

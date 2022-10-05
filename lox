@@ -1,6 +1,26 @@
-fun test() {
-  return 1 + 2;
+var stringToForget = "Forget";
+fun fibonacci(n) {
+  if (n == 0 || n == 1) {
+    return n;
+  }
+  return fibonacci(n-1) + fibonacci(n-2);
 }
 
-var result = test();
+fun randomTest() {
+  for(var i = 0; i < 10; i = i + 1) {
+    var string = "";
+    string = "Hello" + " " + "World";
+  }
+}
+
+fun randomTest2() {
+  for(var j = 0; j < 10; j = j + 1) {
+    var string2 = "";
+    string2 = "Hello" + " " + "World";
+  }
+}
+
+var result = fibonacci(5);
+randomTest();
+randomTest2();
 print result;
