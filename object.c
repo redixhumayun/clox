@@ -147,6 +147,16 @@ void printObject(Value value) {
     }
 }
 
+void handleLocalRefCount(Value oldValue, Value newValue) {
+    if (IS_OBJ(oldValue) == true) {
+        decrementObjectRefCount(AS_OBJ(oldValue));
+    }
+    if (IS_OBJ(newValue) == true) {
+        incrementObjectRefCount(AS_OBJ(newValue));
+    }
+    return;
+}
+
 void handleRefCount(ObjString* name, Value value) {
     uint32_t hash = hashString(name->chars, name->length);
     ObjString* returnValue = tableFindString(&vm.globals, name->chars, name->length, hash);

@@ -355,11 +355,13 @@ static InterpretResult run() {
       }
       case OP_GET_LOCAL: {
         uint8_t slot = READ_BYTE();
+        handleLocalRefCount(NIL_VAL, frame->slots[slot]);
         push(frame->slots[slot]);
         break;
       }
       case OP_SET_LOCAL: {
         uint8_t slot = READ_BYTE();
+        handleLocalRefCount(frame->slots[slot], peek(0));
         frame->slots[slot] = peek(0);
         break;
       }
