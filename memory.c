@@ -5,7 +5,12 @@
 #include "object.h"
 #include "value.h"
 
+#ifdef DEBUG_LOG_GC
+#include <stdio.h>
+#endif
+
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
+    vm.bytesAllocated += newSize - oldSize;
     if (newSize == 0) {
         free(pointer);
         return NULL;
@@ -57,11 +62,21 @@ void freeObjects() {
 }
 
 void incrementObjectRefCount(Obj* object) {
+    #ifdef DEBUG_LOG_GC
+        printf("%p Incrementing the value of the counter for: ", (void*)object);
+        printValue(OBJ_VAL(object));
+        printf(" from %d to %d\n", object->refCount, object->refCount + 1);
+    #endif
     object->refCount++;
     return;
 }
 
 void decrementObjectRefCount(Obj* object) {
+    #ifdef DEBUG_LOG_GC
+        printf("%p Decrementing the value of the counter for: ", (void*)object);
+        printValue(OBJ_VAL(object));
+        printf(" from %d to %d\n", object->refCount, object->refCount - 1);
+    #endif
     if (object->refCount == 0) {
         //  something went wrong. decrementing shouldn't be possible for an object with no references
         exit(1);
@@ -69,7 +84,18 @@ void decrementObjectRefCount(Obj* object) {
     }
     object->refCount--;
     if (object->refCount == 0) {
+        #ifdef DEBUG_LOG_GC
+            printf("-- gc begin\n");
+            printf("%p Freeing the object: ", (void*)object);
+            printValue(OBJ_VAL(object));
+            printf("\n");
+            size_t before = vm.bytesAllocated;
+        #endif
         freeObject(object);
+        #ifdef DEBUG_LOG_GC
+            printf("Collected %zu bytes (from %zu to %zu)\n", before - vm.bytesAllocated, before, vm.bytesAllocated);
+            printf("-- gc end\n");
+        #endif
     }
 }
 

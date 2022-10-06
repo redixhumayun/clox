@@ -55,7 +55,14 @@
         "mutex": "c",
         "stop_token": "c",
         "table.h": "c",
-        "object.h": "c"
+        "object.h": "c",
+        "__functional_base_03": "c",
+        "__hash_table": "c",
+        "__tuple": "c",
+        "compare": "c",
+        "memory": "c",
+        "time.h": "c",
+        "thread": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
