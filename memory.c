@@ -61,6 +61,27 @@ void freeObjects() {
     }
 }
 
+static void removeObjectFromVMList(Obj* object) {
+    Obj* previous = NULL;
+    Obj* objectHead = vm.objects;
+    while (objectHead != NULL) {
+        if (object == objectHead) {
+            objectHead = objectHead->next;
+            if (previous != NULL) {
+                //  not at the head of the list
+                previous->next = objectHead;
+            } else {
+                //  at the head of the list
+                vm.objects = objectHead;
+            }
+            freeObject(object);
+        } else {
+            previous = objectHead;
+            objectHead = objectHead->next;
+        }
+    }
+}
+
 void incrementObjectRefCount(Obj* object) {
     #ifdef DEBUG_LOG_GC
         printf("%p Incrementing the value of the counter for: ", (void*)object);
@@ -91,7 +112,7 @@ void decrementObjectRefCount(Obj* object) {
             printf("\n");
             size_t before = vm.bytesAllocated;
         #endif
-        freeObject(object);
+        removeObjectFromVMList(object);
         #ifdef DEBUG_LOG_GC
             printf("Collected %zu bytes (from %zu to %zu)\n", before - vm.bytesAllocated, before, vm.bytesAllocated);
             printf("-- gc end\n");
