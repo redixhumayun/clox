@@ -14,6 +14,7 @@ static Obj* allocateObject(size_t size, ObjType type) {
     Obj* object = (Obj*)reallocate(NULL, 0, size);
     object->type = type;
     object->next = vm.objects;
+    object->refCount = 0;
     vm.objects = object;
     return object;
 }
@@ -140,5 +141,23 @@ void printObject(Value value) {
             break;
         default:
             fprintf(stderr, "Object is of unknown type");
+    }
+}
+
+void handleRefCount(ObjString* name, Value value) {
+    uint32_t hash = hashString(name->chars, name->length);
+    ObjString* returnValue = tableFindString(&vm.globals, name->chars, name->length, hash);
+    if (returnValue != NULL) {
+        //  this variable currently references some other object. Get the object it references, decrement its ref counter
+        Entry* entry = findEntry(vm.globals.entries, vm.globals.capacity, name);
+        Value oldValue = entry->value;
+        if (IS_OBJ(oldValue) == true) {
+            decrementObjectRefCount(AS_OBJ(oldValue));
+        }
+    }
+    if (IS_OBJ(value) == true) {
+        //  now increment the ref counter of the new object the variable will reference
+        //  but only if it the new value is an Object
+        incrementObjectRefCount(AS_OBJ(value));
     }
 }

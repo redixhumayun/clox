@@ -323,6 +323,8 @@ static InterpretResult run() {
         break;
       case OP_DEFINE_GLOBAL: {
         ObjString* name = READ_STRING();
+        Value value = peek(0);
+        handleRefCount(name, value);
         tableSet(&vm.globals, name, peek(0));
         pop();
         break;
@@ -339,6 +341,8 @@ static InterpretResult run() {
       }
       case OP_SET_GLOBAL: {
         ObjString* name = READ_STRING();
+        Value value = peek(0);
+        handleRefCount(name, value);
         if (tableSet(&vm.globals, name, peek(0))) {
           tableDelete(&vm.globals, name);
           runtimeError("Undefined variable '%s'", name->chars);

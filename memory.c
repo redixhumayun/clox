@@ -56,3 +56,20 @@ void freeObjects() {
     }
 }
 
+void incrementObjectRefCount(Obj* object) {
+    object->refCount++;
+    return;
+}
+
+void decrementObjectRefCount(Obj* object) {
+    if (object->refCount == 0) {
+        //  something went wrong. decrementing shouldn't be possible for an object with no references
+        exit(1);
+        return;
+    }
+    object->refCount--;
+    if (object->refCount == 0) {
+        freeObject(object);
+    }
+}
+

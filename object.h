@@ -33,6 +33,7 @@ typedef enum {
 struct Obj {
     ObjType type;
     struct Obj* next;
+    int refCount;
 };
 
 typedef struct {
@@ -80,6 +81,7 @@ ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
 void printObject(Value value);
 ObjString* allocateString(char* chars, int length, uint32_t hash);
+void handleRefCount(ObjString* name, Value value);
 
 //  This function will check if the value provided has the same type as the parameter
 static inline bool isObjType(Value value, ObjType type) {
