@@ -380,6 +380,11 @@ static InterpretResult run() {
         frame->ip -= offset;
         break;
       }
+      case OP_DELETE: {
+        Value value = peek(0);
+        handleObjectRelease(AS_OBJ(value));
+        break;
+      }
       case OP_CALL: {
         int argCount = READ_BYTE();
         if (!callValue(peek(argCount), argCount)) {

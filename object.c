@@ -170,7 +170,7 @@ void handleRefCount(ObjString* name, Value value) {
     }
     if (IS_OBJ(value) == true) {
         //  now increment the ref counter of the new object the variable will reference
-        //  but only if it the new value is an Object
+        //  but only if the new value is an Object
         incrementObjectRefCount(AS_OBJ(value));
     }
 }

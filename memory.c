@@ -122,12 +122,12 @@ static void removeObjectReferences(Obj* object) {
         case OBJ_FUNCTION: {
             ObjFunction* function = (ObjFunction*) object;
             removeObjectFromGlobalsTable((Obj*)function->name);
-            decrementObjectRefCount((Obj*)function->name);
-            //  decrement ref count for all heap allocated objects in the constants table for the function
+            
+            //  remove all heap allocated objects from the functions chunk constants table
             for(int i = 0; i < function->chunk.constants.capacity; i++) {
                 Value value = function->chunk.constants.values[i];
                 if (IS_OBJ(value)) {
-                    decrementObjectRefCount(AS_OBJ(value));
+                    handleObjectRelease(AS_OBJ(value));
                 }
             }
             break;
@@ -151,6 +151,21 @@ static void removeObjectReferences(Obj* object) {
     }
 }
 
+void handleObjectRelease(Obj* object) {
+    #ifdef DEBUG_LOG_GC
+        printf("%p Freeing the object: ", (void*)object);
+        printValue(OBJ_VAL(object));
+        printf("\n");
+        size_t before = vm.bytesAllocated;
+    #endif
+    //  remove the object from the &vm.strings table here before removing from vm list
+    removeObjectReferences(object);
+    removeObjectFromVMList(object);
+    #ifdef DEBUG_LOG_GC
+        printf("Collected %zu bytes (from %zu to %zu)\n", before - vm.bytesAllocated, before, vm.bytesAllocated);
+    #endif
+}
+
 void incrementObjectRefCount(Obj* object) {
     #ifdef DEBUG_LOG_GC
         printf("%p Incrementing the value of the counter for: ", (void*)object);
@@ -162,33 +177,20 @@ void incrementObjectRefCount(Obj* object) {
 }
 
 void decrementObjectRefCount(Obj* object) {
+    if (object->refCount == 0) {
+        handleObjectRelease(object);
+        return;
+    }
+
     #ifdef DEBUG_LOG_GC
         printf("%p Decrementing the value of the counter for: ", (void*)object);
         printValue(OBJ_VAL(object));
         printf(" from %d to %d\n", object->refCount, object->refCount - 1);
     #endif
-    if (object->refCount == 0) {
-        //  something went wrong. decrementing shouldn't be possible for an object with no references
-        exit(1);
-        return;
-    }
     object->refCount--;
-    
+
     if (object->refCount == 0) {
-        #ifdef DEBUG_LOG_GC
-            printf("-- gc begin\n");
-            printf("%p Freeing the object: ", (void*)object);
-            printValue(OBJ_VAL(object));
-            printf("\n");
-            size_t before = vm.bytesAllocated;
-        #endif
-        //  remove the object from the &vm.strings table here before removing from vm list
-        removeObjectReferences(object);
-        removeObjectFromVMList(object);
-        #ifdef DEBUG_LOG_GC
-            printf("Collected %zu bytes (from %zu to %zu)\n", before - vm.bytesAllocated, before, vm.bytesAllocated);
-            printf("-- gc end\n");
-        #endif
+        handleObjectRelease(object);
     }
 }
 

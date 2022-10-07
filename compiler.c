@@ -20,6 +20,7 @@ typedef struct {
 
 typedef enum {
   PREC_NONE,
+  PREC_DELETE,       // delete
   PREC_ASSIGNMENT,  // =
   PREC_OR,          // or
   PREC_AND,         // and
@@ -424,6 +425,11 @@ static void or_(bool canAssign) {
   patchJump(endJump);
 }
 
+static void delete(bool canAssign) {
+  parsePrecedence(PREC_DELETE);
+  emitByte(OP_DELETE);
+}
+
 ParseRule rules[] = {
   [TOKEN_LEFT_PAREN]    = {grouping, call,   PREC_CALL},
   [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
@@ -463,6 +469,7 @@ ParseRule rules[] = {
   [TOKEN_TRUE]          = {literal,     NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_DELETE]        = {delete,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };

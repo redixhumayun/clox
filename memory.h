@@ -22,4 +22,6 @@ void incrementObjectRefCount(Obj* object);
 
 void decrementObjectRefCount(Obj* object);
 
+void handleObjectRelease(Obj* object);
+
 #endif
