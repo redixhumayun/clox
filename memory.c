@@ -61,6 +61,38 @@ void freeObjects() {
     }
 }
 
+static void removeObjectFromStringsTable(Obj* object) {
+    #ifdef DEBUG_LOG_GC
+        printf("%p Removing this object from the strings table: ", (void*)object);
+        printValue(OBJ_VAL(object));
+        printf("\n");
+    #endif
+    bool result = tableDelete(&vm.strings, AS_STRING(OBJ_VAL(object)));
+    #ifdef DEBUG_LOG_GC
+        if (result == 1) {
+            printf("%p Removed the object from the strings table\n", (void*)object);
+        } else {
+            printf("%p Failed to remove the object because it was not found in the table\n", (void*)object);
+        }
+    #endif
+}
+
+static void removeObjectFromGlobalsTable(Obj* object) {
+    #ifdef DEBUG_LOG_GC
+        printf("%p Removing this object from the globals table: ", (void*)object);
+        printValue(OBJ_VAL(object));
+        printf("\n");
+    #endif
+    bool result = tableDelete(&vm.globals, AS_STRING(OBJ_VAL(object)));
+    #ifdef DEBUG_LOG_GC
+        if (result == 1) {
+            printf("%p Removed the object from the globals table\n", (void*)object);
+        } else {
+            printf("%p Failed to remove the object because it was not found in the table\n", (void*)object);
+        }
+    #endif
+}
+
 static void removeObjectFromVMList(Obj* object) {
     Obj* previous = NULL;
     Obj* objectHead = vm.objects;
@@ -79,6 +111,43 @@ static void removeObjectFromVMList(Obj* object) {
             previous = objectHead;
             objectHead = objectHead->next;
         }
+    }
+}
+
+static void removeObjectReferences(Obj* object) {
+    switch(object->type) {
+        case OBJ_STRING:
+            removeObjectFromStringsTable(object);
+            break;
+        case OBJ_FUNCTION: {
+            ObjFunction* function = (ObjFunction*) object;
+            removeObjectFromGlobalsTable((Obj*)function->name);
+            decrementObjectRefCount((Obj*)function->name);
+            //  decrement ref count for all heap allocated objects in the constants table for the function
+            for(int i = 0; i < function->chunk.constants.capacity; i++) {
+                Value value = function->chunk.constants.values[i];
+                if (IS_OBJ(value)) {
+                    decrementObjectRefCount(AS_OBJ(value));
+                }
+            }
+            break;
+        }
+        case OBJ_CLOSURE: {
+            ObjClosure* closure = (ObjClosure*) object;
+            removeObjectReferences((Obj*) closure->function);
+            //  decrement ref count for all heap allocated objects in the upvalues list of the closure
+            // for(int i = 0; i < closure->upvalueCount; i++) {
+            //     Value value = *(closure->upvalues[i]->location);
+            //     if (IS_OBJ(value)) {
+            //         decrementObjectRefCount(AS_OBJ(value));
+            //     }
+            // }
+            break;
+        }
+        case OBJ_UPVALUE:
+            break;
+        case OBJ_NATIVE:
+            break;
     }
 }
 
@@ -104,6 +173,7 @@ void decrementObjectRefCount(Obj* object) {
         return;
     }
     object->refCount--;
+    
     if (object->refCount == 0) {
         #ifdef DEBUG_LOG_GC
             printf("-- gc begin\n");
@@ -112,6 +182,8 @@ void decrementObjectRefCount(Obj* object) {
             printf("\n");
             size_t before = vm.bytesAllocated;
         #endif
+        //  remove the object from the &vm.strings table here before removing from vm list
+        removeObjectReferences(object);
         removeObjectFromVMList(object);
         #ifdef DEBUG_LOG_GC
             printf("Collected %zu bytes (from %zu to %zu)\n", before - vm.bytesAllocated, before, vm.bytesAllocated);
@@ -120,3 +192,8 @@ void decrementObjectRefCount(Obj* object) {
     }
 }
 
+/**
+ * NOTE: When removing allocated strings because their ref count has fallen to zero, they also 
+ * need to be removed from the &vm.strings table. Otherwise there will be a dangling pointer left in the 
+ * &vm.strings table which points to undefined memory since that memory has been freed.
+ */
