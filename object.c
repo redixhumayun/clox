@@ -157,7 +157,15 @@ void handleLocalRefCount(Value oldValue, Value newValue) {
     return;
 }
 
-void handleRefCount(ObjString* name, Value value) {
+
+/**
+ * @brief This method is called from the op code cases for: OP_DEFINE_GLOBAL, OP_SET_GLOBAL
+ * This is explicitly for managing the ref count of global variables like functions & explicitly globally defined variables
+ * 
+ * @param name The name of the referencing variable
+ * @param value The referenced object
+ */
+void handleGlobalRefCount(ObjString* name, Value value) {
     uint32_t hash = hashString(name->chars, name->length);
     ObjString* returnValue = tableFindString(&vm.globals, name->chars, name->length, hash);
     if (returnValue != NULL) {
@@ -169,7 +177,7 @@ void handleRefCount(ObjString* name, Value value) {
         }
     }
     if (IS_OBJ(value) == true) {
-        //  now increment the ref counter of the new object the variable will reference
+        //  increment the ref counter of the new object the variable will reference
         //  but only if the new value is an Object
         incrementObjectRefCount(AS_OBJ(value));
     }

@@ -81,7 +81,7 @@ ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
 void printObject(Value value);
 ObjString* allocateString(char* chars, int length, uint32_t hash);
-void handleRefCount(ObjString* name, Value value);
+void handleGlobalRefCount(ObjString* name, Value value);
 void handleLocalRefCount(Value oldValue, Value newValue);
 
 //  This function will check if the value provided has the same type as the parameter

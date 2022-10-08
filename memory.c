@@ -106,6 +106,9 @@ static void removeObjectFromVMList(Obj* object) {
                 //  at the head of the list
                 vm.objects = objectHead;
             }
+            #ifdef DEBUG_LOG_GC
+                printf("%p Removed object from the VM list\n", (void*)object);
+            #endif
             freeObject(object);
         } else {
             previous = objectHead;
@@ -136,12 +139,12 @@ static void removeObjectReferences(Obj* object) {
             ObjClosure* closure = (ObjClosure*) object;
             removeObjectReferences((Obj*) closure->function);
             //  decrement ref count for all heap allocated objects in the upvalues list of the closure
-            // for(int i = 0; i < closure->upvalueCount; i++) {
-            //     Value value = *(closure->upvalues[i]->location);
-            //     if (IS_OBJ(value)) {
-            //         decrementObjectRefCount(AS_OBJ(value));
-            //     }
-            // }
+            for(int i = 0; i < closure->upvalueCount; i++) {
+                Value value = *(closure->upvalues[i]->location);
+                if (IS_OBJ(value)) {
+                    handleObjectRelease(AS_OBJ(value));
+                }
+            }
             break;
         }
         case OBJ_UPVALUE:

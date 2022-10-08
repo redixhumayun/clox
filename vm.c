@@ -259,6 +259,11 @@ static InterpretResult run() {
     uint8_t instruction;
     switch(instruction = READ_BYTE()) {
       case OP_RETURN: {
+        /**
+         * NOTE: When an OP_RETURN is encountered, the stack should be iterated through to understand what values are still present
+         * and check the remaining values to decide what should be garbage collected
+         * 
+         */
         Value result = pop();
         vm.frameCount--;
         closeUpvalues(frame->slots);
@@ -327,7 +332,7 @@ static InterpretResult run() {
       case OP_DEFINE_GLOBAL: {
         ObjString* name = READ_STRING();
         Value value = peek(0);
-        handleRefCount(name, value);
+        handleGlobalRefCount(name, value);
         tableSet(&vm.globals, name, peek(0));
         pop();
         break;
@@ -345,7 +350,7 @@ static InterpretResult run() {
       case OP_SET_GLOBAL: {
         ObjString* name = READ_STRING();
         Value value = peek(0);
-        handleRefCount(name, value);
+        handleGlobalRefCount(name, value);
         if (tableSet(&vm.globals, name, peek(0))) {
           tableDelete(&vm.globals, name);
           runtimeError("Undefined variable '%s'", name->chars);
