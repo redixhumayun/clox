@@ -428,6 +428,13 @@ static void or_(bool canAssign) {
 static void delete(bool canAssign) {
   parsePrecedence(PREC_DELETE);
   emitByte(OP_DELETE);
+  /**
+   * This is a horrible hack to get around the fact that delete words as a keyword rather than a function.
+   * The issue is that when the delete expression is encountered, an OP_POP code is emitted to ensure that expressions leave the stack unchanged
+   * The end result is that after the OP_DELETE operation has removed the variable from memory, the OP_POP operation attempts to do the same. This
+   * results in an error while trying to remove the object from areas where the memory has already been released back to the OS.
+   */
+  emitConstant(NIL_VAL);
 }
 
 ParseRule rules[] = {

@@ -125,6 +125,7 @@ static void removeObjectReferences(Obj* object) {
         case OBJ_FUNCTION: {
             ObjFunction* function = (ObjFunction*) object;
             removeObjectFromGlobalsTable((Obj*)function->name);
+            removeObjectFromStringsTable((Obj*)function->name);
             
             //  remove all heap allocated objects from the functions chunk constants table
             for(int i = 0; i < function->chunk.constants.capacity; i++) {

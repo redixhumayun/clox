@@ -326,9 +326,12 @@ static InterpretResult run() {
         printf("\n");
         break;
       }
-      case OP_POP:
+      case OP_POP: {
+        Value value = peek(0);
+        handleLocalRefCount(value, NIL_VAL);
         pop();
         break;
+      }
       case OP_DEFINE_GLOBAL: {
         ObjString* name = READ_STRING();
         Value value = peek(0);
