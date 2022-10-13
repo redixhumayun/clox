@@ -20,8 +20,8 @@ void markValue(Value value);
 
 void markObject(Obj* object);
 
-void collectGarbage();
+void collectGarbage(void);
 
-void freeObjects();
+void freeObjects(void);
 
 #endif

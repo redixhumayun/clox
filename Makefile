@@ -4,7 +4,7 @@ test:
 	cc ./test/test.c ./test/unity.c ./table.c ./object.c ./memory.c ./value.c ./vm.c ./chunk.c ./compiler.c ./scanner.c ./debug.c -o ./out
 
 main:	
-	cc -fdiagnostics-color=always -Weverything -g ./$(wildcard *.c) -o a.out
+	cc -fdiagnostics-color=always -g ./$(wildcard *.c) -o a.out
 
 chunk.o:	memory.o
 	/usr/bin/clang -fdiagnostics-color=always -Weverything -g memory.o -o ./memory.o
