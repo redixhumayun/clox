@@ -80,7 +80,7 @@ static void parsePrecedence(Precedence precedence);
 static void synchronize();
 static void varDeclaration();
 static void expressionStatement();
-static void initCompiler();
+static void initCompiler(Compiler* compiler, FunctionType type);
 static ObjFunction* endCompiler();
 
 static Chunk* currentChunk() {
