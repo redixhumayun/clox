@@ -4,7 +4,10 @@ test:
 	cc ./test/test.c ./test/unity.c ./table.c ./object.c ./memory.c ./value.c ./vm.c ./chunk.c ./compiler.c ./scanner.c ./debug.c -o ./out
 
 main:	
-	emcc -fdiagnostics-color=always -g ./$(wildcard *.c) -o ./project.a
+	cc -fdiagnostics-color=always -g ./$(wildcard *.c) -o ./project.a
+
+wasm:
+	emcc -fdiagnostics-color=always -g ./$(wildcard *.c) -o ./project.html
 
 chunk.o:	memory.o
 	/usr/bin/clang -fdiagnostics-color=always -Weverything -g memory.o -o ./memory.o
@@ -18,6 +21,7 @@ debug.o:
 .PHONY:	test
 
 clean:
-	rm -f project.o
-	rm -r project.dSYM
+	rm -f project.html
+	rm -f project.js
+	rm -f project.wasm
 	
