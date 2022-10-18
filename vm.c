@@ -14,9 +14,78 @@
 #include "object.h"
 #include "memory.h"
 
+#ifdef WASM_COMPILE
+#include "../emsdk/upstream/emscripten/cache/sysroot/include/emscripten.h"
+#endif
+
+extern void pushedValueOntoStack(const char* valueName);
+extern void poppedValueFromStack(const char* valueName);
+extern void vmExecutionFinished();
+
 VM vm;
 
 static void runtimeError(const char* format, ...);
+
+static bool shouldRun = false;
+CallFrame* frame;
+
+#ifdef WASM_COMPILE
+static char* convertObjectToJSNative(Obj* obj) {
+  switch(obj->type) {
+    case OBJ_CLOSURE: {
+      ObjClosure* closure = (ObjClosure*)obj;
+      if (closure->function->name == NULL) {
+        return "<script>";
+      }
+      return closure->function->name->chars;
+      break;
+    }
+    case OBJ_FUNCTION: {
+      ObjFunction* function = (ObjFunction*)obj;
+      return function->name->chars;
+      break;
+    }
+    case OBJ_NATIVE: {
+      return "NativeFn";
+    }
+    case OBJ_STRING: {
+      ObjString* objString = (ObjString*)obj;
+      return objString->chars;
+      break;
+    }
+    case OBJ_UPVALUE: {
+      ObjUpvalue* upvalue = (ObjUpvalue*)obj;
+      return "ObjUpvalue";
+      break;
+    }
+  }
+}
+
+static char* convertValueToJSNative(Value value) {
+  switch (value.type) {
+    case VALUE_BOOL: {
+      bool v = value.as.boolean;
+      if (v == true) {
+        return "True";
+      } else {
+        return "False";
+      }
+      break;
+    }
+    case VALUE_NIL:
+      return "NULL";
+    case VALUE_NUMBER: {
+      double d = value.as.number;
+      return "Number";
+      break;
+    }
+    case VALUE_OBJ: {
+      return convertObjectToJSNative(value.as.obj);
+      break;
+    }
+  }
+}
+#endif
 
 static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
@@ -58,12 +127,20 @@ static void printConstants(CallFrame* frame) {
 }
 
 void push(Value value) {
+  #ifdef WASM_COMPILE
+  const char* JSNativeValue = convertValueToJSNative(value);
+  pushedValueOntoStack(JSNativeValue);
+  #endif
   *vm.stackTop = value;
   vm.stackTop++;
 }
 
 Value pop() {
   vm.stackTop--;
+  #ifdef WASM_COMPILE
+  const char* JSNativeValue = convertValueToJSNative(*vm.stackTop);
+  poppedValueFromStack(JSNativeValue);
+  #endif
   return *vm.stackTop;
 }
 
@@ -227,6 +304,217 @@ void freeVM() {
   freeObjects();
 }
 
+#ifdef WASM_COMPILE
+static InterpretResult runFromJS() {
+  #define READ_BYTE() (*frame->ip++)
+  #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
+  #define READ_STRING() (AS_STRING(READ_CONSTANT()))
+  #define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+  #define BINARY_OP(valueType, op) \
+    do { \
+      if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+        runtimeError("Operands must be numbers."); \
+        return INTERPRET_RUNTIME_ERROR; \
+      } \
+      double b = AS_NUMBER(pop()); \
+      double a = AS_NUMBER(pop()); \
+      push(valueType(a op b)); \
+    } while (false)
+
+  do {
+    uint8_t instruction;
+    switch(instruction = READ_BYTE()) {
+      case OP_RETURN: {
+        /**
+         * NOTE: When an OP_RETURN is encountered, the stack should be iterated through to understand what values are still present
+         * and check the remaining values to decide what should be garbage collected
+         * 
+         */
+        Value result = pop();
+        vm.frameCount--;
+        closeUpvalues(frame->slots);
+        if (vm.frameCount == 0) {
+          pop();
+          // vmExecutionFinished();
+          return INTERPRET_OK;
+        }
+
+        vm.stackTop = frame->slots;
+        push(result);
+        frame = &vm.frames[vm.frameCount - 1];
+        break;
+      }
+      case OP_CONSTANT: {
+        Value constant = READ_CONSTANT();
+        push(constant);
+        break;
+      }
+      case OP_NEGATE: {
+        if (!IS_NUMBER(peek(0))) {
+          runtimeError("Operand must be a number");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        push(NUMBER_VAL(-AS_NUMBER(pop())));
+        break;
+      }
+      case OP_NOT: {
+        push(BOOL_VAL(isFalsey(pop())));
+        break;
+      }
+      case OP_NIL: push(NIL_VAL); break;
+      case OP_TRUE: push(BOOL_VAL(true)); break;
+      case OP_FALSE: push(BOOL_VAL(false)); break;
+      case OP_EQUAL: {
+        Value a = pop();
+        Value b = pop();
+        push(BOOL_VAL(valuesEqual(a, b)));
+        break; 
+      }
+      case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
+      case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
+      case OP_ADD: {
+        if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+          concatenate();
+        } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+          double a = AS_NUMBER(pop());
+          double b = AS_NUMBER(pop());
+          push(NUMBER_VAL(a+b));
+        } else {
+          runtimeError("Operands must be two numbers or two strings");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+      case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
+      case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
+      case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+      case OP_PRINT: {
+        printValue(pop());
+        printf("\n");
+        break;
+      }
+      case OP_POP: {
+        Value value = peek(0);
+        handleLocalRefCount(value, NIL_VAL);
+        pop();
+        break;
+      }
+      case OP_DEFINE_GLOBAL: {
+        ObjString* name = READ_STRING();
+        Value value = peek(0);
+        handleGlobalRefCount(name, value);
+        tableSet(&vm.globals, name, peek(0));
+        pop();
+        break;
+      }
+      case OP_GET_GLOBAL: {
+        ObjString* name = READ_STRING();
+        Value value;
+        if (!tableGet(&vm.globals, name, &value)) {
+          runtimeError("Undefined variable '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        push(value);
+        break;
+      }
+      case OP_SET_GLOBAL: {
+        ObjString* name = READ_STRING();
+        Value value = peek(0);
+        handleGlobalRefCount(name, value);
+        if (tableSet(&vm.globals, name, peek(0))) {
+          tableDelete(&vm.globals, name);
+          runtimeError("Undefined variable '%s'", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+      case OP_GET_LOCAL: {
+        uint8_t slot = READ_BYTE();
+        handleLocalRefCount(NIL_VAL, frame->slots[slot]);
+        push(frame->slots[slot]);
+        break;
+      }
+      case OP_SET_LOCAL: {
+        uint8_t slot = READ_BYTE();
+        handleLocalRefCount(frame->slots[slot], peek(0));
+        frame->slots[slot] = peek(0);
+        break;
+      }
+      case OP_JUMP_IF_FALSE: {
+        uint16_t offset = READ_SHORT();
+        if (isFalsey(peek(0))) frame->ip += offset;
+        break;
+      }
+      case OP_JUMP: {
+        uint16_t offset = READ_SHORT();
+        frame->ip += offset;
+        break;
+      }
+      case OP_LOOP: {
+        uint16_t offset = READ_SHORT();
+        frame->ip -= offset;
+        break;
+      }
+      case OP_DELETE: {
+        Value value = peek(0);
+        handleObjectRelease(AS_OBJ(value));
+        break;
+      }
+      case OP_CALL: {
+        int argCount = READ_BYTE();
+        if (!callValue(peek(argCount), argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        frame = &vm.frames[vm.frameCount - 1];
+        break;
+      }
+      case OP_CLOSURE: {
+        ObjFunction* function = AS_FUNCTION(READ_CONSTANT());
+        ObjClosure* closure = newClosure(function);
+        push(OBJ_VAL(closure));
+        for (int i = 0; i < closure->upvalueCount; i++) {
+          uint8_t isLocal = READ_BYTE();
+          uint8_t index = READ_BYTE();
+          if (isLocal) {
+            closure->upvalues[i] = captureUpvalue(&frame->slots[index]);
+          } else {
+            closure->upvalues[i] = frame->closure->upvalues[index];
+          }
+        }
+        break;
+      }
+      case OP_GET_UPVALUE: {
+        uint8_t slot = READ_BYTE();
+        push(*frame->closure->upvalues[slot]->location);
+        break;
+      }
+      case OP_SET_UPVALUE: {
+        uint8_t slot = READ_BYTE();
+        *frame->closure->upvalues[slot]->location = peek(0);
+        break;
+      }
+      case OP_CLOSE_UPVALUE: {
+        closeUpvalues(vm.stackTop - 1);
+        pop();
+        break;
+      }
+    }
+    shouldRun = false;
+  } while(shouldRun == true);
+  #undef READ_BYTE
+  #undef READ_CONSTANT
+  #undef READ_STRING
+  #undef READ_SHORT
+  #undef BINARY_OP
+}
+
+void runNextIteration() {
+  shouldRun = true;
+  runFromJS();
+}
+#endif
+
+#ifndef WASM_COMPILE
 static InterpretResult run() {
   CallFrame* frame = &vm.frames[vm.frameCount - 1];
 
@@ -439,6 +727,7 @@ static InterpretResult run() {
   #undef READ_SHORT
   #undef BINARY_OP
 }
+#endif
 
 InterpretResult interpret(const char* source) {
   ObjFunction* function = compile(source);
@@ -452,7 +741,16 @@ InterpretResult interpret(const char* source) {
   push(OBJ_VAL(closure));
   call(closure, 0);
 
-  InterpretResult result = run();
+  frame = &vm.frames[vm.frameCount - 1];
 
-  return result;
+  #ifdef WASM_COMPILE
+  shouldRun = true;
+  runFromJS();
+  #endif
+
+  #ifndef WASM_COMPILE
+  InterpretResult result = run();
+  #endif
+
+  return INTERPRET_OK;
 }

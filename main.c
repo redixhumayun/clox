@@ -58,7 +58,19 @@ void runFile(const char* path) {
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
+void wasmMain() {
+  initVM();
+
+  char line[1024] = "var x = \"Hello World\";";
+  InterpretResult result = interpret(line);
+}
+
 int main(int argc, const char* argv[]) {
+  #ifdef WASM_COMPILE
+  return 0;
+  #endif
+
+  #ifndef WASM_COMPILE
   initVM();
 
   if (argc == 1) {
@@ -71,4 +83,5 @@ int main(int argc, const char* argv[]) {
   }
 
   return 0;
+  #endif
 }

@@ -10,4 +10,6 @@
 #define DEBUG_LOG_GC
 #define UINT8_COUNT (UINT8_MAX+1)
 
+#define WASM_COMPILE
+
 #endif

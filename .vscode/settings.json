@@ -62,7 +62,10 @@
         "compare": "c",
         "memory": "c",
         "time.h": "c",
-        "thread": "c"
+        "thread": "c",
+        "emscripten.h": "c",
+        "complex": "c",
+        "cmath": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "editor.inlineSuggest.enabled": false
