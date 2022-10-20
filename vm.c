@@ -18,9 +18,20 @@
 #include "../emsdk/upstream/emscripten/cache/sysroot/include/emscripten.h"
 #endif
 
-extern void pushedValueOntoStack(const char* valueName);
+extern void passingStruct(Value value, double number);
+
+extern void pushedDoubleOnStack(double number);
+extern void pushedBoolOnStack(bool b);
+extern void pushedStringOnStack(const char* string);
+
+extern void addDoubleToConstants(double number);
+extern void addBoolToConstants(bool b);
+extern void addStringToConstants(const char* string);
+
 extern void poppedValueFromStack(const char* valueName);
 extern void vmExecutionFinished();
+extern void addConstantToJS(const char* valueName);
+extern void removeStyles();
 
 VM vm;
 
@@ -107,6 +118,37 @@ static void printCurrentCallFrame(ObjString* callFrameName) {
   }
 }
 
+void printConstantsToJS(CallFrame* frame) {
+  ValueArray constants = frame->closure->function->chunk.constants;
+  for(int i = 0; i < constants.count; i++) {
+    Value value = constants.values[i];
+    switch (value.type) {
+      case VALUE_BOOL: {
+        bool v = value.as.boolean;
+        addBoolToConstants(v);
+        break;
+      }
+      case VALUE_NIL:
+        break;
+      case VALUE_NUMBER: {
+        double d = value.as.number;
+        addDoubleToConstants(d);
+        break;
+      }
+      case VALUE_OBJ: {
+        switch(value.as.obj->type) {
+          case OBJ_STRING: {
+            ObjString* string = (ObjString*)(value.as.obj);
+            pushedStringOnStack(string->chars);
+            break;
+          }
+        }
+        break;
+      }
+    }
+  }
+}
+
 static void printConstants(CallFrame* frame) {
   printf("\n");
   printCurrentCallFrame(frame->closure->function->name);
@@ -128,8 +170,27 @@ static void printConstants(CallFrame* frame) {
 
 void push(Value value) {
   #ifdef WASM_COMPILE
-  const char* JSNativeValue = convertValueToJSNative(value);
-  pushedValueOntoStack(JSNativeValue);
+  switch(value.type) {
+    case VALUE_BOOL: {
+      pushedBoolOnStack(value.as.boolean);
+      break;
+    }
+    case VALUE_NUMBER: {
+      pushedDoubleOnStack(value.as.number);
+      break;
+    }
+    case VALUE_NIL:
+      break;
+    case VALUE_OBJ:
+      switch(value.as.obj->type) {
+        case OBJ_STRING: {
+          ObjString* string = (ObjString*)(value.as.obj);
+          pushedStringOnStack(string->chars);
+          break;
+        }
+      }
+      break;
+  }
   #endif
   *vm.stackTop = value;
   vm.stackTop++;
@@ -162,6 +223,7 @@ static bool call(ObjClosure* closure, int argCount) {
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
   printConstants(frame);
+  printConstantsToJS(frame);
   return true;
 }
 
@@ -322,6 +384,16 @@ static InterpretResult runFromJS() {
     } while (false)
 
   do {
+    #ifdef DEBUG_TRACE_EXECUTION
+      printf("      ");
+      for(Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+        printf("[");
+        printValue(*slot);
+        printf("]");
+      }
+      printf("\n");
+      disassembleInstruction(&frame->closure->function->chunk, (int)(frame->ip - frame->closure->function->chunk.code));
+    #endif
     uint8_t instruction;
     switch(instruction = READ_BYTE()) {
       case OP_RETURN: {
@@ -335,7 +407,7 @@ static InterpretResult runFromJS() {
         closeUpvalues(frame->slots);
         if (vm.frameCount == 0) {
           pop();
-          // vmExecutionFinished();
+          vmExecutionFinished();
           return INTERPRET_OK;
         }
 
@@ -509,6 +581,7 @@ static InterpretResult runFromJS() {
 }
 
 void runNextIteration() {
+  removeStyles();
   shouldRun = true;
   runFromJS();
 }
