@@ -7,7 +7,7 @@ main:
 	cc -fdiagnostics-color=always -g ./$(wildcard *.c) -o ./project.a
 
 wasm:
-	emcc -fdiagnostics-color=always -g ./$(wildcard *.c) -o ./project.html --shell-file ./shell_minimal.html --js-library ./js_library.js -sEXPORTED_FUNCTIONS=_wasmMain,_main,_runNextIteration -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,getValue,setValue
+	emcc -fdiagnostics-color=always -g ./$(wildcard *.c) -o ./project.html --shell-file ./shell_minimal.html --js-library ./js_library.js -sEXPORTED_FUNCTIONS=_wasmMain,_main,_runNextIteration,_copyStructAtAddressIntoBuffer -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,getValue,setValue
 
 chunk.o:	memory.o
 	/usr/bin/clang -fdiagnostics-color=always -Weverything -g memory.o -o ./memory.o

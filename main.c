@@ -61,8 +61,8 @@ void runFile(const char* path) {
 void wasmMain() {
   initVM();
 
-  char line[1024] = "var a = 1;";
-  // char line[1024] = "var x = \"Hello World\";";
+  char line[1024] = "var a = 1; var b = 2; var c = a + b;";
+  // char line[1024] = "var x = \"Random\";";
   InterpretResult result = interpret(line);
 }
 

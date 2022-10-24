@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -18,20 +19,16 @@
 #include "../emsdk/upstream/emscripten/cache/sysroot/include/emscripten.h"
 #endif
 
-extern void passingStruct(Value value, double number);
+extern void pushedValueOnStack(Value value);
 
-extern void pushedDoubleOnStack(double number);
-extern void pushedBoolOnStack(bool b);
-extern void pushedStringOnStack(const char* string);
+extern void iterateOverConstantValues(Value* value, int count);
 
-extern void addDoubleToConstants(double number);
-extern void addBoolToConstants(bool b);
-extern void addStringToConstants(const char* string);
+extern void iterateOverTableValues(Entry* entry, int count, int* entryIndexArray, int entryIndexArrayLength);
 
-extern void poppedValueFromStack(const char* valueName);
+extern void poppedValueFromStack();
 extern void vmExecutionFinished();
-extern void addConstantToJS(const char* valueName);
 extern void removeStyles();
+extern void referenceStruct(Value value);
 
 VM vm;
 
@@ -40,63 +37,15 @@ static void runtimeError(const char* format, ...);
 static bool shouldRun = false;
 CallFrame* frame;
 
-#ifdef WASM_COMPILE
-static char* convertObjectToJSNative(Obj* obj) {
-  switch(obj->type) {
-    case OBJ_CLOSURE: {
-      ObjClosure* closure = (ObjClosure*)obj;
-      if (closure->function->name == NULL) {
-        return "<script>";
-      }
-      return closure->function->name->chars;
-      break;
-    }
-    case OBJ_FUNCTION: {
-      ObjFunction* function = (ObjFunction*)obj;
-      return function->name->chars;
-      break;
-    }
-    case OBJ_NATIVE: {
-      return "NativeFn";
-    }
-    case OBJ_STRING: {
-      ObjString* objString = (ObjString*)obj;
-      return objString->chars;
-      break;
-    }
-    case OBJ_UPVALUE: {
-      ObjUpvalue* upvalue = (ObjUpvalue*)obj;
-      return "ObjUpvalue";
-      break;
-    }
-  }
+void copyStructAtAddressIntoBuffer(int* pointer) {
+  ObjClosure* objClosure = (ObjClosure*)pointer;
+  char* char_pointer = (char*)objClosure;
+  char_pointer = char_pointer + 12;
+  ObjFunction* objFunction = (ObjFunction*)char_pointer;
+  printf("The function arity is: %d\n", objFunction->arity);
+  printf("The function name is: %s\n", objFunction->name->chars);
+  printf("The size of the chunk struct is: %lu\n", sizeof(objFunction->chunk));
 }
-
-static char* convertValueToJSNative(Value value) {
-  switch (value.type) {
-    case VALUE_BOOL: {
-      bool v = value.as.boolean;
-      if (v == true) {
-        return "True";
-      } else {
-        return "False";
-      }
-      break;
-    }
-    case VALUE_NIL:
-      return "NULL";
-    case VALUE_NUMBER: {
-      double d = value.as.number;
-      return "Number";
-      break;
-    }
-    case VALUE_OBJ: {
-      return convertObjectToJSNative(value.as.obj);
-      break;
-    }
-  }
-}
-#endif
 
 static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
@@ -118,36 +67,41 @@ static void printCurrentCallFrame(ObjString* callFrameName) {
   }
 }
 
-void printConstantsToJS(CallFrame* frame) {
-  ValueArray constants = frame->closure->function->chunk.constants;
-  for(int i = 0; i < constants.count; i++) {
-    Value value = constants.values[i];
-    switch (value.type) {
-      case VALUE_BOOL: {
-        bool v = value.as.boolean;
-        addBoolToConstants(v);
-        break;
-      }
-      case VALUE_NIL:
-        break;
-      case VALUE_NUMBER: {
-        double d = value.as.number;
-        addDoubleToConstants(d);
-        break;
-      }
-      case VALUE_OBJ: {
-        switch(value.as.obj->type) {
-          case OBJ_STRING: {
-            ObjString* string = (ObjString*)(value.as.obj);
-            pushedStringOnStack(string->chars);
-            break;
-          }
-        }
-        break;
-      }
+static void printGlobalsTable() {
+  Table* table = &vm.globals;
+  for (int i = 0; i < table->capacity; i++) {
+    Entry entry = table->entries[i];
+    if (entry.key != NULL) {
+      printf("Key: %s\n", entry.key->chars);
+      printf("Value: ");
+      printValue(entry.value);
+      printf("\n");
+      printf("Index: %d\n", i);
     }
   }
 }
+
+static void printGlobalsTableToJS() {
+  printGlobalsTable();
+  Table* globals = &vm.globals;
+  int* arr = malloc(globals->count * sizeof(int));
+  int arrCounter = 0;
+  for (int i = 0; i < globals->capacity; i++) {
+    Entry entry = globals->entries[i];
+    if (entry.key != NULL) {
+      printf("%d\n", i);
+      printf("Entry address: %p\n", &globals->entries[i]);
+      arr[arrCounter++] = i;
+    }
+  }
+  iterateOverTableValues(globals->entries, globals->count, arr, arrCounter);
+}
+
+void printConstantsToJS(CallFrame* frame) {
+  ValueArray constants = frame->closure->function->chunk.constants;
+  iterateOverConstantValues(constants.values, constants.count);
+}
+
 
 static void printConstants(CallFrame* frame) {
   printf("\n");
@@ -170,27 +124,7 @@ static void printConstants(CallFrame* frame) {
 
 void push(Value value) {
   #ifdef WASM_COMPILE
-  switch(value.type) {
-    case VALUE_BOOL: {
-      pushedBoolOnStack(value.as.boolean);
-      break;
-    }
-    case VALUE_NUMBER: {
-      pushedDoubleOnStack(value.as.number);
-      break;
-    }
-    case VALUE_NIL:
-      break;
-    case VALUE_OBJ:
-      switch(value.as.obj->type) {
-        case OBJ_STRING: {
-          ObjString* string = (ObjString*)(value.as.obj);
-          pushedStringOnStack(string->chars);
-          break;
-        }
-      }
-      break;
-  }
+  pushedValueOnStack(value);
   #endif
   *vm.stackTop = value;
   vm.stackTop++;
@@ -199,8 +133,7 @@ void push(Value value) {
 Value pop() {
   vm.stackTop--;
   #ifdef WASM_COMPILE
-  const char* JSNativeValue = convertValueToJSNative(*vm.stackTop);
-  poppedValueFromStack(JSNativeValue);
+  poppedValueFromStack();
   #endif
   return *vm.stackTop;
 }
@@ -476,6 +409,7 @@ static InterpretResult runFromJS() {
         Value value = peek(0);
         handleGlobalRefCount(name, value);
         tableSet(&vm.globals, name, peek(0));
+        printGlobalsTableToJS();
         pop();
         break;
       }
