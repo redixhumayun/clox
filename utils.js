@@ -1,16 +1,8 @@
 function pushValueOnStack(value) {
     const container = document.getElementById('container-vm-stack')
-        const divElement = document.createElement('div');
-        divElement.innerText = value
-        container.prepend(divElement);
-
-        const constantsContainer = document.getElementById('container-constants-table');
-        const constantsValueContainer = constantsContainer.getElementsByClassName('constants-value')[0];
-        for(child of constantsValueContainer.children) {
-            if (child.innerText == value) {
-                child.style.border = '3px solid green';
-            }
-        }
+    const divElement = document.createElement('div');
+    divElement.innerText = value
+    container.prepend(divElement);
 }
 
 function addConstant(constant) {

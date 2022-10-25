@@ -22,8 +22,10 @@
 extern void pushedValueOnStack(Value value);
 
 extern void iterateOverConstantValues(Value* value, int count);
+extern void highlightConstantsValueInTable(Value value);
 
 extern void iterateOverTableValues(Entry* entry, int count, int* entryIndexArray, int entryIndexArrayLength);
+extern void highlightTableValueInGlobals(ObjString* name);
 
 extern void poppedValueFromStack();
 extern void vmExecutionFinished();
@@ -67,30 +69,13 @@ static void printCurrentCallFrame(ObjString* callFrameName) {
   }
 }
 
-static void printGlobalsTable() {
-  Table* table = &vm.globals;
-  for (int i = 0; i < table->capacity; i++) {
-    Entry entry = table->entries[i];
-    if (entry.key != NULL) {
-      printf("Key: %s\n", entry.key->chars);
-      printf("Value: ");
-      printValue(entry.value);
-      printf("\n");
-      printf("Index: %d\n", i);
-    }
-  }
-}
-
 static void printGlobalsTableToJS() {
-  printGlobalsTable();
   Table* globals = &vm.globals;
   int* arr = malloc(globals->count * sizeof(int));
   int arrCounter = 0;
   for (int i = 0; i < globals->capacity; i++) {
     Entry entry = globals->entries[i];
     if (entry.key != NULL) {
-      printf("%d\n", i);
-      printf("Entry address: %p\n", &globals->entries[i]);
       arr[arrCounter++] = i;
     }
   }
@@ -352,6 +337,7 @@ static InterpretResult runFromJS() {
       case OP_CONSTANT: {
         Value constant = READ_CONSTANT();
         push(constant);
+        highlightConstantsValueInTable(constant);
         break;
       }
       case OP_NEGATE: {
@@ -410,6 +396,7 @@ static InterpretResult runFromJS() {
         handleGlobalRefCount(name, value);
         tableSet(&vm.globals, name, peek(0));
         printGlobalsTableToJS();
+        highlightTableValueInGlobals(name);
         pop();
         break;
       }
@@ -420,6 +407,7 @@ static InterpretResult runFromJS() {
           runtimeError("Undefined variable '%s'.", name->chars);
           return INTERPRET_RUNTIME_ERROR;
         }
+        highlightTableValueInGlobals(name);
         push(value);
         break;
       }
