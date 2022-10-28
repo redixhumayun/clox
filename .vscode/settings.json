@@ -67,6 +67,5 @@
         "complex": "c",
         "cmath": "c"
     },
-    "C_Cpp.errorSquiggles": "Enabled",
-    "editor.inlineSuggest.enabled": false
+    "C_Cpp.errorSquiggles": "Enabled"
 }

@@ -17,7 +17,6 @@
 
 #ifdef WASM_COMPILE
 #include "../emsdk/upstream/emscripten/cache/sysroot/include/emscripten.h"
-#endif
 
 extern void pushedValueOnStack(Value value);
 
@@ -31,6 +30,8 @@ extern void poppedValueFromStack();
 extern void vmExecutionFinished();
 extern void removeStyles();
 extern void referenceStruct(Value value);
+#endif
+
 
 VM vm;
 
@@ -69,6 +70,7 @@ static void printCurrentCallFrame(ObjString* callFrameName) {
   }
 }
 
+#ifdef WASM_COMPILE
 static void printGlobalsTableToJS() {
   Table* globals = &vm.globals;
   int* arr = malloc(globals->count * sizeof(int));
@@ -86,7 +88,7 @@ void printConstantsToJS(CallFrame* frame) {
   ValueArray constants = frame->closure->function->chunk.constants;
   iterateOverConstantValues(constants.values, constants.count);
 }
-
+#endif
 
 static void printConstants(CallFrame* frame) {
   printf("\n");
@@ -141,7 +143,9 @@ static bool call(ObjClosure* closure, int argCount) {
   frame->ip = closure->function->chunk.code;
   frame->slots = vm.stackTop - argCount - 1;
   printConstants(frame);
+  #ifdef WASM_COMPILE
   printConstantsToJS(frame);
+  #endif
   return true;
 }
 
